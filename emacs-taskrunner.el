@@ -5,6 +5,9 @@
 (defconst taskrunner--js-gulp-tasks-command "gulp --tasks-json"
   "Command used to retrieve the tasks for 'gulp' in json form.")
 
+(defconst taskrunner--make-phony-regexp "\.PHONY[[:space:]]+:[[:space:]]+"
+  "Regular expression used to locate all PHONY targets in makefile.")
+
 (defun taskrunner--js-get-package-tasks ()
   "Open and extract the tasks from package.json.
 This command returns a list containing the names of the tasks as strings."
@@ -29,3 +32,26 @@ If no file exists, return an empty list."
     (message "%s" gulp-json-tasks)
     )
   )
+
+(defun taskrunner--make-get-phony-tasks (&optional path)
+  "Retrieve all 'PHONY' tasks from a makefile. If PATH is nil then project root
+is used."
+  (interactive)
+  (let ((make-path (or
+                    path
+                    (concat (projectile-project-root "Makefile"))))
+        (buff (get-buffer-create "*taskrunner-makefile*"))
+        (phony-tasks '())
+        )
+    (with-temp-buffer
+      (set-buffer buff)
+      (goto-line 1)
+      (insert-file-contents make-path)
+      (while (re-search-forward taskrunner--make-phony-regexp nil t)
+        (setq phony-tasks (push (symbol-name (symbol-at-point)) phony-tasks)))
+      (kill-current-buffer))
+    phony-tasks
+    )
+  )
+
+(taskrunner--make-get-phony-tasks "./Makefile")
