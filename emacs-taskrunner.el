@@ -5,6 +5,8 @@
 (defconst taskrunner--js-gulp-tasks-command "gulp --tasks-json"
   "Command used to retrieve the tasks for 'gulp' in json form.")
 
+(defconst taskrunner--rake-tasks-command "rake --tasks")
+
 (defconst taskrunner--make-phony-regexp "\.PHONY[[:space:]]+:[[:space:]]+"
   "Regular expression used to locate all PHONY targets in makefile.")
 
@@ -22,14 +24,38 @@ This command returns a list containing the names of the tasks as strings."
     )
   )
 
-(defun taskrunner--js-get-gulp-tasks ()
+(defun taskrunner--js-get-gulp-tasks (&optional path)
   "Retrieve tasks for gulp if the file is found.
 If no file exists, return an empty list."
   (interactive)
-  (let ((default-directory (projectile-project-root))
+  (let ((default-directory
+          (or
+           path
+           (projectile-project-root)))
         (gulp-json-tasks (cdr (cadr (json-read-from-string (shell-command-to-string taskrunner--js-gulp-tasks-command)))))
         )
+    (message "%s" path)
     (message "%s" gulp-json-tasks)
+    )
+  )
+
+(defun taskrunner--ruby-get-rake-tasks (&optional path)
+  (interactive)
+  (let ((default-directory (or
+                            path
+                            (projectile-project-root)))
+        (buff (get-buffer-create "*taskrunner-rake-tasks*"))
+        (rake-tasks '()))
+    (message (concat "Default dir: " default-directory))
+    ;; (shell-command "rake --tasks" buff)
+    (call-process "rake" nil buff nil "--tasks")
+    (with-temp-buffer
+      (set-buffer buff)
+      (goto-line 1)
+      (while (re-search-forward "rake " nil t)
+        (setq rake-tasks (push (symbol-name (form-at-point)) rake-tasks))))
+    ;; (kill-current-buffer))
+    rake-tasks
     )
   )
 
@@ -53,5 +79,3 @@ is used."
     phony-tasks
     )
   )
-
-(taskrunner--make-get-phony-tasks "./Makefile")
