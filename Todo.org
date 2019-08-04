@@ -1,0 +1,15 @@
+* Emacs-Taskrunner Todo
+- [ ] Add support for caching using project root
+- [ ] Add support for updating the cache
+- [ ] Rework grunt tasks so they are retrieved synchronously for now
+- [ ] Add option to open build/task/target files(makefile, package.json, gruntfile...)
+- [ ] Add support for ant
+- [ ] Add support for maven
+- [ ] Add support for gradle
+- [ ] Add support for make targets which are not phony
+- [ ] Add support for Cmake
+- [ ] Add support for Ninja
+- [ ] Add support for Buck
+- [ ] Add support for Mix
+- [ ] Add support for leiningen
+- [ ] Create a uniform interface which will produce a list of targets

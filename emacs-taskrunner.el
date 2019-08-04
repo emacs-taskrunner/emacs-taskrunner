@@ -5,7 +5,7 @@
 (defconst taskrunner--js-gulp-tasks-command "gulp --tasks-simple"
   "Command used to retrieve the tasks for 'gulp' in json form.")
 
-(defconst taskrunner--rake-tasks-command '("rake" "-T")
+(defconst taskrunner--rake-tasks-command '("rake" "-AT")
   "Command used to retrieve the tasks from rake.")
 
 (defconst taskrunner--make-phony-regexp "\.PHONY[[:space:]]+:[[:space:]]+"
