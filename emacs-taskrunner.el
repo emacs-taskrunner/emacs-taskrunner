@@ -60,23 +60,13 @@ This command returns a list containing the names of the tasks as strings."
     )
   )
 
-(defun taskrunner--ruby-get-rake-tasks (&optional path)
-  (interactive)
-  (let ((default-directory (or
-                            path
-                            (projectile-project-root)))
-        (buff (get-buffer-create "*taskrunner-rake-tasks*"))
-        (rake-tasks '()))
-    (message (concat "Default dir: " default-directory))
-    ;; (shell-command "rake --tasks" buff)
-    (call-process "rake" nil buff nil "--tasks")
-    (with-temp-buffer
-      (set-buffer buff)
-      (goto-line 1)
-      (while (re-search-forward "rake " nil t)
-        (setq rake-tasks (push (symbol-name (form-at-point)) rake-tasks))))
-    ;; (kill-current-buffer))
-    rake-tasks
+(defun taskrunner--ruby-get-rake-tasks (dir)
+  "Retrieve tasks from the rake build system for the project in directory DIR."
+  (let ((default-directory dir)
+        (task-list '()))
+    (dolist  (el (split-string (shell-command-to-string "rake -T") "\n"))
+      (push (concat "RAKE" " " (cadr (split-string el " "))) task-list)
+      )
     )
   )
 
