@@ -21,6 +21,7 @@ This command returns a list containing the names of the tasks as strings."
     (dolist (el (cdr package-json-contents))
       (setq package-tasks (push (symbol-name (car el)) package-tasks)))
     (message "%s" package-tasks)
+    package-tasks
     )
   )
 
@@ -80,9 +81,11 @@ is used."
     )
   )
 
-(defun taskrunner--get-grunt-tasks ()
+(defun taskrunner--get-grunt-tasks-from-buffer ()
   "Retrieve the tasks from the grunt taskrunner. It uses grunt --help to
 retrieve them."
+  (message "Got to tasks")
+  (goto-line 1)
   (let ((beg (re-search-forward "Available tasks.+\n" nil t))
         ;; The end of the region is simply an empty line
         (end (re-search-forward "^$" nil t))
@@ -92,6 +95,40 @@ retrieve them."
       (setq splits (split-string (buffer-string) "\n"))
       (widen))
     (dolist (el splits)
+      (message "Called from splits")
       (message "%s" (car (split-string (string-trim el) " "))))
     )
   )
+
+(defun taskrunner--grunt-process-sentinel (process event)
+  "Sentinel used to retrieve the grunt tasks from an async process."
+  (cond
+   ((string-match-p "finished" event)
+    (message" Done!")
+    (with-temp-buffer
+      (set-buffer (process-buffer process))
+      (taskrunner--get-grunt-tasks-from-buffer))
+    )
+   (t
+    (message "Failure to retrieve tasks from grunt! Error produced was %s" event)))
+  )
+
+(defun taskrunner--create-process (dir commands run-in-compile &optional
+                                       buff-name sentinel process-name)
+  "Run the command COMMAND in the directory DIR. If RUN-IN-COMPILE is t
+then run the command in compilation mode, otherwise run an async process."
+  (let ((default-directory dir))
+    (if (not run-in-compile)
+        (progn
+          (make-process
+           :name process-name
+           :buffer buff-name
+           :command commands
+           :sentinel sentinel))
+      )
+    )
+  )
+
+(taskrunner--create-process "~/clones/grunt-demo" '("grunt" "--help") nil
+                            "*Grunt Tasks*" 'taskrunner--grunt-process-sentinel
+                            "emacstaskrunner grunt")
