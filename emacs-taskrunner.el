@@ -2,19 +2,19 @@
 
 (require 'projectile)
 
-(defconst taskrunner--js-gulp-tasks-command "gulp --tasks-json"
+(defconst taskrunner--js-gulp-tasks-command "gulp --tasks-simple"
   "Command used to retrieve the tasks for 'gulp' in json form.")
 
-(defconst taskrunner--rake-tasks-command "rake --tasks")
+(defconst taskrunner--rake-tasks-command '("rake" "-T")
+  "Command used to retrieve the tasks from rake.")
 
 (defconst taskrunner--make-phony-regexp "\.PHONY[[:space:]]+:[[:space:]]+"
   "Regular expression used to locate all PHONY targets in makefile.")
 
-(defun taskrunner--js-get-package-tasks ()
-  "Open and extract the tasks from package.json.
+(defun taskrunner--js-get-package-tasks (dir)
+  "Open and extract the tasks from package.json located in directory DIR.
 This command returns a list containing the names of the tasks as strings."
-  (interactive)
-  (let* ((package-path (concat (projectile-project-root) "package.json"))
+  (let* ((package-path (concat dir "package.json"))
          (package-json-contents (assoc 'scripts (json-read-file package-path)))
          (package-tasks '())
          )
@@ -24,6 +24,17 @@ This command returns a list containing the names of the tasks as strings."
     package-tasks
     )
   )
+
+(defun taskrunner--yarn-or-npm (dir)
+  "Attempt to decide if the current project in directory DIR uses yarn or npm."
+  (let ((dir-files  (list-directory dir)))
+    (if (member "yarn.lock" dir-files)
+        "YARN"
+      "NPM")
+    )
+  )
+
+(taskrunner--js-get-package-tasks "~/clones/light-project-example-gulp/")
 
 (defun taskrunner--js-get-gulp-tasks (&optional path)
   "Retrieve tasks for gulp if the file is found.
