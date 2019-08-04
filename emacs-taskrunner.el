@@ -11,46 +11,52 @@
 (defconst taskrunner--make-phony-regexp "\.PHONY[[:space:]]+:[[:space:]]+"
   "Regular expression used to locate all PHONY targets in makefile.")
 
-(defun taskrunner--js-get-package-tasks (dir)
-  "Open and extract the tasks from package.json located in directory DIR.
-This command returns a list containing the names of the tasks as strings."
-  (let* ((package-path (concat dir "package.json"))
-         (package-json-contents (assoc 'scripts (json-read-file package-path)))
-         (package-tasks '())
-         )
-    (dolist (el (cdr package-json-contents))
-      (setq package-tasks (push (symbol-name (car el)) package-tasks)))
-    (message "%s" package-tasks)
-    package-tasks
-    )
-  )
-
 (defvar taskrunner-tasks-cache '()
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
 
 (defun taskrunner--yarn-or-npm (dir)
-  "Attempt to decide if the current project in directory DIR uses yarn or npm."
-  (let ((dir-files  (list-directory dir)))
+  "Attempt to decide if the current project in directory DIR uses yarn or npm.
+If the file 'yarn.lock' is not found then the default is 'npm'."
+  (let ((dir-files  (directory-files dir)))
     (if (member "yarn.lock" dir-files)
         "YARN"
       "NPM")
     )
   )
 
+(defun taskrunner--js-get-package-tasks (dir)
+  "Open and extract the tasks from package.json located in directory DIR.
+This command returns a list containing the names of the tasks as strings."
+  (let* ((package-path (concat dir "package.json"))
+         (package-json-contents (assoc 'scripts (json-read-file package-path)))
+         (task-prefix (taskrunner--yarn-or-npm dir))
+         (package-tasks '())
+         )
+    (dolist (el (cdr package-json-contents))
+      (setq package-tasks (push (concat task-prefix " " (symbol-name (car el))) package-tasks)))
+    package-tasks
+    )
+  )
 
-(defun taskrunner--js-get-gulp-tasks (&optional path)
-  "Retrieve tasks for gulp if the file is found.
-If no file exists, return an empty list."
+(defun taskrunner--load-tasks-in-cache (dir)
+  "Locate all task files and load them into the cache for the project."
   (interactive)
-  (let ((default-directory
-          (or
-           path
-           (projectile-project-root)))
-        (gulp-json-tasks (cdr (cadr (json-read-from-string (shell-command-to-string taskrunner--js-gulp-tasks-command)))))
-        )
-    (message "%s" path)
-    (message "%s" gulp-json-tasks)
+  (let ((work-dir-files (directory-files dir)))
+    (if (member "package.json" work-dir-files)
+        (taskrunner--js-get-package-tasks dir)
+      )
+    (if (or (member "gulpfile.js" work-dir-files) (member "Gulpfile.js" work-dir-files))
+        (taskrunner--js-get-gulp-tasks dir)
+      )
+    )
+  )
+
+(defun taskrunner--js-get-gulp-tasks (dir)
+  "Retrieve tasks for gulp if the file is found."
+  (interactive)
+  (let ((default-directory dir))
+    (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n")
     )
   )
 
@@ -98,7 +104,6 @@ is used."
 (defun taskrunner--get-grunt-tasks-from-buffer ()
   "Retrieve the tasks from the grunt taskrunner. It uses grunt --help to
 retrieve them."
-  (message "Got to tasks")
   (goto-line 1)
   (let ((beg (re-search-forward "Available tasks.+\n" nil t))
         ;; The end of the region is simply an empty line
