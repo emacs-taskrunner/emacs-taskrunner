@@ -79,3 +79,19 @@ is used."
     phony-tasks
     )
   )
+
+(defun taskrunner--get-grunt-tasks ()
+  "Retrieve the tasks from the grunt taskrunner. It uses grunt --help to
+retrieve them."
+  (let ((beg (re-search-forward "Available tasks.+\n" nil t))
+        ;; The end of the region is simply an empty line
+        (end (re-search-forward "^$" nil t))
+        (splits))
+    (when beg
+      (narrow-to-region beg end)
+      (setq splits (split-string (buffer-string) "\n"))
+      (widen))
+    (dolist (el splits)
+      (message "%s" (car (split-string (string-trim el) " "))))
+    )
+  )
