@@ -25,6 +25,10 @@ This command returns a list containing the names of the tasks as strings."
     )
   )
 
+(defvar taskrunner-tasks-cache '()
+  "A cache used to store the tasks retrieved.
+It is an alist of the form (project-root . list-of-tasks)")
+
 (defun taskrunner--yarn-or-npm (dir)
   "Attempt to decide if the current project in directory DIR uses yarn or npm."
   (let ((dir-files  (list-directory dir)))
@@ -34,7 +38,6 @@ This command returns a list containing the names of the tasks as strings."
     )
   )
 
-(taskrunner--js-get-package-tasks "~/clones/light-project-example-gulp/")
 
 (defun taskrunner--js-get-gulp-tasks (&optional path)
   "Retrieve tasks for gulp if the file is found.
@@ -140,6 +143,5 @@ then run the command in compilation mode, otherwise run an async process."
     )
   )
 
-(taskrunner--create-process "~/clones/grunt-demo" '("grunt" "--help") nil
-                            "*Grunt Tasks*" 'taskrunner--grunt-process-sentinel
-                            "emacstaskrunner grunt")
+(provide 'emacs-taskrunner)
+;;; emacs-taskrunner.el ends here
