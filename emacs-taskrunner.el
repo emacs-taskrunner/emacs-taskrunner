@@ -33,6 +33,7 @@ This command returns a list containing the names of the tasks as strings."
          (task-prefix (taskrunner--yarn-or-npm dir))
          (package-tasks '())
          )
+
     (dolist (el (cdr package-json-contents))
       (setq package-tasks (push (concat task-prefix " " (symbol-name (car el))) package-tasks)))
     package-tasks
@@ -46,17 +47,25 @@ This command returns a list containing the names of the tasks as strings."
     (if (member "package.json" work-dir-files)
         (taskrunner--js-get-package-tasks dir)
       )
-    (if (or (member "gulpfile.js" work-dir-files) (member "Gulpfile.js" work-dir-files))
+    (if (or (member "gulpfile.js" work-dir-files)
+            (member "Gulpfile.js" work-dir-files))
         (taskrunner--js-get-gulp-tasks dir)
+      )
+    (if (or (member "rakefile" work-dir-files)
+            (member "Rakefile" work-dir-files)
+            (member "rakefile.rb" work-dir-files)
+            (member "Rakefile.rb" work-dir-files))
+        (taskrunner--ruby-get-rake-tasks dir)
       )
     )
   )
 
 (defun taskrunner--js-get-gulp-tasks (dir)
-  "Retrieve tasks for gulp if the file is found."
+  "Retrieve tasks for gulp if there is a gulp taskfile in directory DIR."
   (interactive)
   (let ((default-directory dir))
-    (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n")
+    (map 'list (lambda (elem)
+                 (concat "GULP" " " elem)) (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n"))
     )
   )
 
@@ -64,11 +73,12 @@ This command returns a list containing the names of the tasks as strings."
   "Retrieve tasks from the rake build system for the project in directory DIR."
   (let ((default-directory dir)
         (task-list '()))
-    (dolist  (el (split-string (shell-command-to-string "rake -T") "\n"))
-      (push (concat "RAKE" " " (cadr (split-string el " "))) task-list)
-      )
+    (map 'list (lambda (elem)
+                 (concat "RAKE" " " (cadr (split-string elem " ")))) (split-string (shell-command-to-string "rake") "\n"))
     )
   )
+
+(message "%s" (taskrunner--ruby-get-rake-tasks "~/clones/elasticsearch-rails/"))
 
 (defun taskrunner--make-get-phony-tasks (&optional path)
   "Retrieve all 'PHONY' tasks from a makefile. If PATH is nil then project root
