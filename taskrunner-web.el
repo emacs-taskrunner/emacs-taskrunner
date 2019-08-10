@@ -1,10 +1,11 @@
 ;; Functions/warnings/varibles related to retrieving and working with
-;; tasksrunners which are usually used in the web world.
+;; tasksrunners which are usually used in web projects.
 ;; Included here are:
 ;; - yarn/npm
 ;; - gulp
 ;; - grunt
-;; - jake(TODO)
+;; - TODO: jake
+;; - TODO: webpack?
 
 (defcustom taskrunner-preferred-js-package-manager nil
   "The preferred package manager to be used for tasks from package.json.

@@ -2,6 +2,50 @@
 This is an elisp library which aims to provide a way to retrieve all of the
 tasks/targets from various build systems and execute them in a comint buffer.
 
-Currently, this project is in its very early stages and is not usable. The
-ultimate goal is to use this library to provide an interactive interface through
-helm/ivy/ido which will let the user select tasks and run them.
+Currently, this project is in its very early stages and is not very usable. A
+lot of the code simply uses ~message~ to display the tasks in the message buffer.
+
+The ultimate goal is to use this library to provide an interactive interface through
+helm/ivy/ido which will let the user select tasks and run them. Additionally, it
+will also provide a task caching mechanism so the tasks do not have to be
+retrieved over and over again. 
+
+A larger goal to be looked at down the line would be to use async
+processes/threads so emacs does not freeze while the processes are being
+retrieved. For the time being, the main focus is to find a way to reliably parse
+and return all tasks from a project directory and execute them.
+
+* Supported Systems
+** Currently working on
+So far, work has began on supporting the following build/taskrunner systems:
+- [ ] yarn/npm(package.json tasks)
+- [ ] Gulp
+- [ ] Grunt
+- [ ] Gradle
+- [ ] Make
+- [ ] CMake
+- [ ] rake
+
+If a checkbox is checked then that means that the tasks from that system can be
+reliably extracted.
+
+** Systems which this package aims to support
+- [ ] yarn/npm
+- [ ] Gulp
+- [ ] Grunt
+- [ ] Gradle
+- [ ] Jake?
+- [ ] Make
+- [ ] CMake
+- [ ] Ninja
+- [ ] Meson
+- [ ] Buck
+- [ ] sbt
+- [ ] mix
+- [ ] leinengen
+- [ ] apache ant
+- [ ] apache maven
+- [ ] rake
+- [ ] stack?
+- [ ] cabal?
+- [ ] msbuild?
