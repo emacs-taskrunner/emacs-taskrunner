@@ -2,9 +2,10 @@
 
 (require 'projectile)
 (require 'taskrunner-clang)
+(require 'taskrunner-web)
 
-(defconst taskrunner--js-gulp-tasks-command "gulp --tasks-simple"
-  "Command used to retrieve the tasks for 'gulp' in json form.")
+(defgroup emacs-taskrunner nil
+  "A taskrunner for emacs which covers several build systems and lets the user select and runtargets interactively.")
 
 (defconst taskrunner--rake-tasks-command '("rake" "-AT")
   "Command used to retrieve the tasks from rake.")
@@ -12,41 +13,6 @@
 (defvar taskrunner-tasks-cache '()
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
-
-
-(defun taskrunner--yarn-or-npm (dir)
-  "Attempt to decide if the current project uses in directory DIR yarn or npm.
-If the file 'yarn.lock' is not found then the default is 'npm'."
-  (let ((dir-files  (directory-files dir)))
-    (if (member "yarn.lock" dir-files)
-        "YARN"
-      "NPM")
-    )
-  )
-
-(defun taskrunner--js-get-package-tasks (dir)
-  "Open and extract the tasks from package.json located in directory DIR.
-This command returns a list containing the names of the tasks as strings."
-  (let* ((package-path (concat dir "package.json"))
-         (package-json-contents (assoc 'scripts (json-read-file package-path)))
-         (task-prefix (taskrunner--yarn-or-npm dir))
-         (package-tasks '())
-         )
-
-    (dolist (el (cdr package-json-contents))
-      (setq package-tasks (push (concat task-prefix " " (symbol-name (car el))) package-tasks)))
-    package-tasks
-    )
-  )
-
-(defun taskrunner--js-get-gulp-tasks (dir)
-  "Retrieve tasks for gulp if there is a gulp taskfile in directory DIR."
-  (interactive)
-  (let ((default-directory dir))
-    (map 'list (lambda (elem)
-                 (concat "GULP" " " elem)) (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n"))
-    )
-  )
 
 (defun taskrunner--gradle-get-heading-tasks (heading)
   "Retrieve the gradle tasks below the heading HEADING and return as list."
@@ -125,36 +91,6 @@ again."
   (interactive)
   )
 
-(defun taskrunner--get-grunt-tasks-from-buffer ()
-  "Retrieve the tasks from the grunt taskrunner. It uses grunt --help to
-retrieve them."
-  (goto-line 1)
-  (let ((beg (re-search-forward "Available tasks.+\n" nil t))
-        ;; The end of the region is simply an empty line
-        (end (re-search-forward "^$" nil t))
-        (splits))
-    (when beg
-      (narrow-to-region beg end)
-      (setq splits (split-string (buffer-string) "\n"))
-      (widen))
-    (dolist (el splits)
-      (message "Called from splits")
-      (message "%s" (car (split-string (string-trim el) " "))))
-    )
-  )
-
-(defun taskrunner--grunt-process-sentinel (process event)
-  "Sentinel used to retrieve the grunt tasks from an async process."
-  (cond
-   ((string-match-p "finished" event)
-    (message" Done!")
-    (with-temp-buffer
-      (set-buffer (process-buffer process))
-      (taskrunner--get-grunt-tasks-from-buffer))
-    )
-   (t
-    (message "Failure to retrieve tasks from grunt! Error produced was %s" event)))
-  )
 
 (defun taskrunner--create-process (dir commands run-in-compile &optional
                                        buff-name sentinel process-name)
