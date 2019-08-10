@@ -1,0 +1,7 @@
+* Emacs Taskrunner
+This is an elisp library which aims to provide a way to retrieve all of the
+tasks/targets from various build systems and execute them in a comint buffer.
+
+Currently, this project is in its very early stages and is not usable. The
+ultimate goal is to use this library to provide an interactive interface through
+helm/ivy/ido which will let the user select tasks and run them.
