@@ -3,13 +3,24 @@
 - [ ] Add support for updating the cache
 - [ ] Rework grunt tasks so they are retrieved synchronously for now(async later!)
 - [ ] Add option to open build/task/target files(makefile, package.json, gruntfile...)
-- [ ] Add support for Cmake
-- [ ] Add support for ant
-- [ ] Add support for maven
-- [ ] Add support for gradle
+- [ ] Add support for Cmake tasks
+- [ ] Add support for ant tasks
+- [ ] Add support for maven tasks
+- [X] Add support for gradle tasks
 - [ ] Add support for make targets which are not phony
-- [ ] Add support for Ninja
-- [ ] Add support for Buck
-- [ ] Add support for Mix
-- [ ] Add support for leiningen
+- [ ] Add support for Ninja tasks
+- [ ] Add support for Buck tasks
+- [ ] Add support for Mix tasks
+- [ ] Add support for leiningen tasks
 - [ ] Create a uniform interface which will produce a list of targets
+- [ ] Add support for running gulp tasks
+- [ ] Add support for running grunt tasks
+- [ ] Add support for running yarn/npm tasks
+- [ ] Add support for running Cmake tasks
+- [ ] Add support for running ant  tasks
+- [ ] Add support for running maven tasks
+- [ ] Add support for running gradle tasks
+- [ ] Add support for running Ninja tasks
+- [ ] Add support for running Buck tasks
+- [ ] Add support for running Mix tasks
+- [ ] Add support for running leiningen tasks
