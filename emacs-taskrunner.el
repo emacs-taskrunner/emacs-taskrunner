@@ -85,14 +85,52 @@ This command returns a list containing the names of the tasks as strings."
     )
   )
 
-(defun taskrunner--ruby-get-rake-tasks (dir)
-"Retrieve tasks from the rake build system for the project in directory DIR."
-(let ((default-directory dir)
-      (task-list '()))
+(defun taskrunner--gradle-get-heading-tasks (heading)
+  "Retrieve the gradle tasks below the heading HEADING and return as list."
+  (goto-line 1)
+  (narrow-to-region (re-search-forward heading nil t)
+                    (progn 
+                      (re-search-forward "^$" nil t)
+                      (previous-line 1)
+                      (line-end-position)))
+
   (map 'list (lambda (elem)
-               (concat "RAKE" " " (cadr (split-string elem " ")))) (split-string (shell-command-to-string taskrunner--rake-tasks-command) "\n"))
+               (message (concat "GRADLE" " " (car (split-string elem " ")))))
+       ;; (message "%s" (split-string elem " ")))
+       (split-string (buffer-string) "\n"))
+  (widen)
   )
-)
+
+(defun taskrunner--gradle-tasks (dir)
+  "Retrieve the gradle tasks in for the project in directory DIR."
+  (let ((default-directory dir)
+        (buff (get-buffer-create "*taskrunner-gradle-tasks*"))
+        )
+    (call-process "gradle"  nil "*taskrunner-gradle-tasks*"  nil "tasks" "--all")
+    (with-temp-buffer
+      (set-buffer buff)
+      (message "Get build")
+      (taskrunner--gradle-get-heading-tasks "Build tasks\n-+\n")
+      (taskrunner--gradle-get-heading-tasks "Help tasks\n-+\n")
+      (taskrunner--gradle-get-heading-tasks "Verification tasks\n-+\n")
+      (taskrunner--gradle-get-heading-tasks "Build Setup tasks\n-+\n")
+      (taskrunner--gradle-get-heading-tasks "Documentation tasks\n-+\n")
+      (taskrunner--gradle-get-heading-tasks "Other tasks\n-+\n")
+      (kill-buffer buff)
+      )
+    )
+  )
+
+
+(defun taskrunner--rake-tasks (dir)
+  "Retrieve tasks from the rake build system for the project in directory DIR."
+  (let ((default-directory dir)
+        (task-list '()))
+    (map 'list (lambda (elem)
+                 (concat "RAKE" " " (cadr (split-string elem " "))))
+         (split-string (shell-command-to-string taskrunner--rake-tasks-command) "\n"))
+    )
+  )
 
 (defun taskrunner--load-tasks-in-cache (dir)
   "Locate all task files and load them into the cache for the project."
