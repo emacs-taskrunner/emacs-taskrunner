@@ -1,0 +1,25 @@
+* Working on Emacs Taskrunner
+So far, no automated tests have been made but this is planned for the
+future. Currently, all testing is done manually and relies on open-source
+projects which use the build systems in question.
+
+To setup the project for testing, either evaluate the following shell code block
+or run the commands within in a shell.
+
+*Running this will freeze emacs until the folders are cloned*
+#+BEGIN_SRC shell
+
+  mkdir TestRepos
+  cd TestRepos
+  # Test gulp/yarn/npm tasks
+  git clone https://github.com/magnolia-cms/light-project-example-gulp.git
+  # Test grunt/yarn/npm tasks
+  git clone https://github.com/belen-albeza/grunt-demo.git
+  # Test rake
+  git clone https://github.com/elastic/elasticsearch-rails.git
+  # Test Jake
+  git clone https://github.com/OscarGodson/jake-example.git
+  # Test for mix tasks
+  git clone https://github.com/wojtekmach/acme_bank.git
+
+#+END_SRC
