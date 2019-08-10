@@ -98,8 +98,7 @@ This command returns a list containing the names of the tasks as strings."
                (message (concat "GRADLE" " " (car (split-string elem " ")))))
        ;; (message "%s" (split-string elem " ")))
        (split-string (buffer-string) "\n"))
-  (widen)
-  )
+  (widen))
 
 (defun taskrunner--gradle-tasks (dir)
   "Retrieve the gradle tasks in for the project in directory DIR."
@@ -121,7 +120,6 @@ This command returns a list containing the names of the tasks as strings."
     )
   )
 
-
 (defun taskrunner--rake-tasks (dir)
   "Retrieve tasks from the rake build system for the project in directory DIR."
   (let ((default-directory dir)
@@ -132,9 +130,11 @@ This command returns a list containing the names of the tasks as strings."
     )
   )
 
-(defun taskrunner--load-tasks-in-cache (dir)
-  "Locate all task files and load them into the cache for the project."
-  (interactive)
+(defun taskrunner--get-tasks (dir)
+  "Locate and extract all tasks for the project in directory DIR.
+Returns a list containing all possible tasks.  Each element is of the form
+'TASK-RUNNER-PROGRAM TASK-NAME'.  This is done for the purpose of working with
+projects which might use multiple task runners."
   (let ((work-dir-files (directory-files dir))
         (tasks '()))
     (if (member "package.json" work-dir-files)
@@ -155,6 +155,9 @@ This command returns a list containing the names of the tasks as strings."
     )
   )
 
+(defun taskrunner-refresh-cache ()
+  (interactive)
+  )
 
 (defun taskrunner--get-grunt-tasks-from-buffer ()
   "Retrieve the tasks from the grunt taskrunner. It uses grunt --help to
