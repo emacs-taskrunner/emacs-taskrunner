@@ -65,20 +65,33 @@ This command returns a list containing the names of the tasks as strings."
   )
 
 (defun taskrunner--get-grunt-tasks-from-buffer ()
-  "Retrieve the tasks from the grunt taskrunner. It uses grunt --help to
-retrieve them."
+  "Retrieve the grunt tasks from the current buffer and return them as a list.
+This function is not meant to be used externally.  Use `taskrunner--get-grunt-tasks'
+instead."
   (goto-line 1)
   (let ((beg (re-search-forward "Available tasks.+\n" nil t))
         ;; The end of the region is simply an empty line
         (end (re-search-forward "^$" nil t))
-        (splits))
+        (tasks '()))
     (when beg
       (narrow-to-region beg end)
-      (setq splits (split-string (buffer-string) "\n"))
-      (widen))
-    (dolist (el splits)
-      (message "Called from splits")
-      (message "%s" (car (split-string (string-trim el) " "))))
+      (map 'list (lambda (elem)
+                   (concat "GULP" " " (car (split-string (string-trim elem) " "))))
+           (split-string (buffer-string) "\n")))
+    )
+  )
+
+(defun taskrunner--get-grunt-tasks (dir)
+  "Retrieve all grunt tasks from the project in directory DIR."
+  (let ((default-directory dir)
+        (buff (get-buffer-create "*taskrunner-grunt-tasks*"))
+        (tasks))
+    (call-process "grunt" nil "*taskrunner-grunt-tasks*" nil "--help")
+    (with-temp-buffer
+      (set-buffer buff)
+      (setq tasks (taskrunner--get-grunt-tasks-from-buffer))
+      (kill-current-buffer))
+    tasks
     )
   )
 
