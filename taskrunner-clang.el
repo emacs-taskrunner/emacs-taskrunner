@@ -2,8 +2,11 @@
 ;; for any build/task system typically used for C/C++/C# languages.
 (require 'projectile)
 
-(defconst taskrunner--make-phony-regexp "\.PHONY[[:space:]]+:[[:space:]]+"
+(defconst taskrunner--make-phony-target-regexp "\.PHONY[[:space:]]+:[[:space:]]+"
   "Regular expression used to locate all PHONY targets in makefile.")
+
+(defconst taskrunner--make-target-regexp "^[a-zA-Z_/\\-]+:"
+  "Regular expression used to locate all Makefile targets which are not PHONY.")
 
 (defconst taskrunner--cmake-warning
   "Taskrunner: Detected CMake build system but no build folder or Makefile were found! Please setup
@@ -11,17 +14,36 @@ CMake for either insource or outsource build and then call emacs-taskrunner agai
   "A warning string used to indicate that a CMake project was detected but no
 build folder or makefile was found.")
 
-(defun taskrunner--make-get-phony-tasks (dir)
+(defun taskrunner--make-get-regular-targets ()
+  "Retrieve all non-phony Makefile targets from the current buffer."
+  (interactive)
+  (let ((target-list '()))
+    (while (re-search-forward taskrunner--make-target-regexp nil t)
+      (narrow-to-region (progn
+                          (beginning-of-line)
+                          (point))
+                        (progn
+                          (end-of-line)
+                          (point)))
+      (push (concat "MAKE" " " (car (split-string (buffer-string) ":"))) target-list)
+      (widen)
+      )
+    target-list
+    )
+  )
+
+(defun taskrunner--make-get-phony-targets (dir)
   "Retrieve all 'PHONY' tasks from the makefile located in the directory DIR."
   (interactive)
-  (let ((make-path (concat dir "Makefile"))
-        (buff (get-buffer-create "*taskrunner-makefile*"))
+  (let ((makefile-path (concat dir "Makefile"))
+        (buff (get-buffer-create "*taskrunner-makefile-tasks*"))
         (tasks '())
         )
     (with-temp-buffer
       (set-buffer buff)
       (goto-line 1)
-      (insert-file-contents make-path)
+      (insert-file-contents makefile-path)
+      (goto-line 1)
       (while (re-search-forward taskrunner--make-phony-regexp nil t)
         (setq tasks (push (symbol-name (symbol-at-point)) phony-tasks)))
       (kill-current-buffer))
