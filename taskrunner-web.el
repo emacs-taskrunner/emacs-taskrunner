@@ -4,7 +4,7 @@
 ;; - yarn/npm
 ;; - gulp
 ;; - grunt
-;; - TODO: jake
+;; - jake
 
 (defcustom taskrunner-preferred-js-package-manager nil
   "The preferred package manager to be used for tasks from package.json.
@@ -102,8 +102,7 @@ instead."
   "Get all Jake tasks from the project in directory DIR."
   (let ((default-directory dir))
     (map 'list (lambda (elem)
-                 (if (not (string-equal "" elem)) 
-                     (concat "JAKE" " " (cadr (split-string elem " ")))))
+                 (concat "JAKE" " " (cadr (split-string elem " "))))
          ;; Splitting the Jake tasks on \n leads to one element being empty so it must be removed
          (remove "" (split-string (shell-command-to-string taskrunner--jake-tasks-command) "\n")))
     )
