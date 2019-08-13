@@ -5,7 +5,6 @@
 ;; - gulp
 ;; - grunt
 ;; - TODO: jake
-;; - TODO: webpack?
 
 (defcustom taskrunner-preferred-js-package-manager nil
   "The preferred package manager to be used for tasks from package.json.
@@ -34,6 +33,8 @@ is present then NPM is used.  If none are present and
       "YARN")
      ((member "package-lock.json" dir-files)
       "NPM")
+     ;; Default if no files are present and the preferred package manager is
+     ;; not set
      (t
       "NPM"))
     )
@@ -43,23 +44,23 @@ is present then NPM is used.  If none are present and
   "Open and extract the tasks from package.json located in directory DIR.
 This command returns a list containing the names of the tasks as strings."
   (let* ((package-path (concat dir "package.json"))
-         (package-json-contents (assoc 'scripts (json-read-file package-path)))
+         (package-json-scripts (assoc 'scripts (json-read-file package-path)))
          (task-prefix (taskrunner--yarn-or-npm dir))
          (package-tasks '())
          )
-
-    (dolist (el (cdr package-json-contents))
-      (setq package-tasks (push (concat task-prefix " " (symbol-name (car el))) package-tasks)))
-    package-tasks
+    (message "package-json-scripts")
+    (map 'list (lambda (elem)
+                 (concat task-prefix " " (symbol-name (car elem))))
+         (cdr package-json-scripts))
     )
   )
 
 (defun taskrunner--js-get-gulp-tasks (dir)
-  "Retrieve tasks for gulp if there is a gulp taskfile in directory DIR."
-  (interactive)
+  "Retrieve gulp tasks for the project in directory DIR."
   (let ((default-directory dir))
     (map 'list (lambda (elem)
-                 (concat "GULP" " " elem)) (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n"))
+                 (concat "GULP" " " elem))
+         (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n"))
     )
   )
 
