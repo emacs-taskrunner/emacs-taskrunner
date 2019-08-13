@@ -17,7 +17,10 @@ variable is nil then `npm' is used as default."
   :group 'emacs-taskrunner)
 
 (defconst taskrunner--js-gulp-tasks-command "gulp --tasks-simple"
-  "Command used to retrieve the tasks for 'gulp' in json form.")
+  "Command used to retrieve the tasks for Gulp.")
+
+(defconst taskrunner--jake-tasks-command "jake -T"
+  "Command used to retrieve tasks from the Jake taskrunner.")
 
 (defun taskrunner--yarn-or-npm (dir)
   "Detect if the current project in directory DIR is using `yarn' or `npm'.
@@ -95,17 +98,29 @@ instead."
     )
   )
 
-(defun taskrunner--grunt-process-sentinel (process event)
-  "Sentinel used to retrieve the grunt tasks from an async process."
-  (cond
-   ((string-match-p "finished" event)
-    (message" Done!")
-    (with-temp-buffer
-      (set-buffer (process-buffer process))
-      (taskrunner--get-grunt-tasks-from-buffer))
+(defun taskrunner--get-jake-tasks (dir)
+  "Get all Jake tasks from the project in directory DIR."
+  (let ((default-directory dir))
+    (map 'list (lambda (elem)
+                 (if (not (string-equal "" elem)) 
+                     (concat "JAKE" " " (cadr (split-string elem " ")))))
+         ;; Splitting the Jake tasks on \n leads to one element being empty so it must be removed
+         (remove "" (split-string (shell-command-to-string taskrunner--jake-tasks-command) "\n")))
     )
-   (t
-    (message "Failure to retrieve tasks from grunt! Error produced was %s" event)))
   )
+
+;; This will be used when I being work on making task retrieval async!
+;; (defun taskrunner--grunt-process-sentinel (process event)
+;;   "Sentinel used to retrieve the grunt tasks from an async process."
+;;   (cond
+;;    ((string-match-p "finished" event)
+;;     (message" Done!")
+;;     (with-temp-buffer
+;;       (set-buffer (process-buffer process))
+;;       (taskrunner--get-grunt-tasks-from-buffer))
+;;     )
+;;    (t
+;;     (message "Failure to retrieve tasks from grunt! Error produced was %s" event)))
+;;   )
 
 (provide 'taskrunner-web)
