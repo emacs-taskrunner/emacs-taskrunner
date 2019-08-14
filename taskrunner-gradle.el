@@ -51,25 +51,25 @@
            (split-string (buffer-string) "\n"))
       )))
 
-(defun taskrunner--gradle-tasks (dir)
-"Retrieve the gradle tasks for the project in directory DIR."
-(let ((default-directory dir)
-      (buff (get-buffer-create "*taskrunner-gradle-tasks*"))
-      (gradle-tasks '())
-      )
-  (call-process "gradle"  nil "*taskrunner-gradle-tasks*"  nil "tasks")
-  (with-temp-buffer
-    (set-buffer buff)
-    (dolist (curr-regex taskrunner-gradle-heading-regexps)
-      (let ((tasks-retrieved (taskrunner--gradle-get-heading-tasks curr-regex)))
-        (when tasks-retrieved
-          (setq gradle-tasks (append gradle-tasks tasks-retrieved))
-          )
-        ))
-    (kill-buffer buff))
-  ;; Return the tasks acquired
-  gradle-tasks
+(defun taskrunner--get-gradle-tasks (dir)
+  "Retrieve the gradle tasks for the project in directory DIR."
+  (let ((default-directory dir)
+        (buff (get-buffer-create taskrunner-gradle-tasks-buffer-name))
+        (gradle-tasks '())
+        )
+    (call-process "gradle"  nil taskrunner-gradle-tasks-buffer-name  nil "tasks")
+    (with-temp-buffer
+      (set-buffer buff)
+      (dolist (curr-regex taskrunner-gradle-heading-regexps)
+        (let ((tasks-retrieved (taskrunner--gradle-get-heading-tasks curr-regex)))
+          (when tasks-retrieved
+            (setq gradle-tasks (append gradle-tasks tasks-retrieved))
+            )
+          ))
+      (kill-buffer buff))
+    ;; Return the tasks acquired
+    gradle-tasks
+    )
   )
-)
 
 (provide 'taskrunner-gradle)

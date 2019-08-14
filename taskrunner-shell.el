@@ -1,12 +1,12 @@
 ;; Files related to finding shell/powershell scripts and returning their names
 ;; for selection
 
-(defun taskrunner--get-scripts (dir filetype prefix)
-  "Return a list of all scripts matching regexp FILETYPE in directory DIR.
+(defun taskrunner--get-scripts (dir filetype-regexp prefix)
+  "Return a list of all scripts matching regexp FILETYPE-REGEXP in DIR.
 All names are prefixed with the string provided by PREFIX."
   (if (directory-name-p dir)
       (progn
-        (let ((shell-scripts (directory-files dir nil filetype)))
+        (let ((shell-scripts (directory-files dir nil filetype-regexp)))
           (map 'list (lambda (elem)
                        (concat prefix " " elem))
                shell-scripts)
