@@ -28,7 +28,7 @@ built which can be used to select tasks and run them.
 - [X] rake
 - [X] cargo(Rust)
 - [X] go(Golang)
-- [ ] Cask
+- [X] Cask
 - [ ] sbt
 - [ ] Make
 - [ ] CMake
