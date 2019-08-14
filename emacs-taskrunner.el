@@ -104,14 +104,21 @@ Return t or nil."
   )
 
 (defun taskrunner-refresh-cache (&optional dir)
-  "Retrieve all tasks for the current project and load them in the cache.
-If there were tasks previously loaded then remove them and retrieve all tasks
-again."
-  (interactive)
-  (if (projectile-project-p)
-      (progn
-        )
-    (message "Not in a project!"))
+  "Retrieve all tasks for project in DIR or the current project and set cache.
+If there were tasks previously loaded then remove them, retrieve all tasks
+again and set the corresponding project to the new list.  Return a list
+containing the new tasks."
+  (let* ((proj-root (if dir
+                        dir
+                      (projectile-project-root)))
+         (proj-tasks (taskrunner-collect-tasks proj-root)))
+    ;; remove old tasks if they exist
+    (assoc-delete-all (intern proj-root) taskrunner-tasks-cache)
+    ;; Add new tasks
+    (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
+    ;; Return the tasks
+    proj-tasks
+    )
   )
 
 ;; Quick tests
