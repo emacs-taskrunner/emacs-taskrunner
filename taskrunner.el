@@ -4,6 +4,7 @@
 (require 'taskrunner-clang)
 (require 'taskrunner-web)
 (require 'taskrunner-gradle)
+(require 'taskrunner-ruby)
 
 (defgroup taskrunner nil
   "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively.")
@@ -66,7 +67,6 @@ updating the cache."
     )
   )
 
-
 (defun taskrunner-get-tasks-from-cache (&optional dir)
   "Retrieve the cached tasks from the directory DIR or the current project.
 If the project does not have any tasks cached then collect all tasks and update
@@ -121,16 +121,9 @@ containing the new tasks."
     )
   )
 
-;; Quick tests
-;; (ivy-read "Task: "
-;;           (taskrunner--get-tasks "~/clones/grunt-demo/")
-;;           :require-match t
-;;           :action (lambda (choice)
-;;                     (message choice)))
-
-;; (setq taskrunner-tasks-cache '())
-;; taskrunner-tasks-cache
-;; (message "%s" (taskrunner-get-tasks "~/clones/grunt-demo/"))
+(defun taskrunner-delete-tasks-cache ()
+  "Delete the entire task cache."
+  (setq taskrunner-tasks-cache '()))
 
 ;; Currently not used. Will be used when moving retrieval functions to async
 ;; (defun taskrunner--create-process (dir commands run-in-compile &optional
@@ -149,5 +142,5 @@ containing the new tasks."
 ;;     )
 ;;   )
 
-(provide 'emacs-taskrunner)
+(provide 'taskrunner)
 ;;; emacs-taskrunner.el ends here

@@ -11,3 +11,5 @@
          (split-string (shell-command-to-string taskrunner--rake-tasks-command) "\n"))
     )
   )
+
+(provide 'taskrunner-ruby)
