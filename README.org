@@ -22,20 +22,23 @@ built which can be used to select tasks and run them.
 - [X] Grunt
 - [X] Gradle
 - [X] Jake
+- [X] Apache ant
+- [X] mix
+- [X] leinengen
+- [X] rake
+- [X] cargo(Rust)
+- [X] go(Golang)
+- [ ] Cask
+- [ ] sbt
 - [ ] Make
 - [ ] CMake
 - [ ] Ninja
 - [ ] Meson
 - [ ] Buck
-- [ ] sbt
-- [X] mix
-- [X] leinengen
-- [X] apache ant
-- [ ] apache maven
-- [X] rake
-- [ ] stack?
-- [ ] cabal?
-- [ ] msbuild?
+- [ ] Apache maven
+- [ ] stack(?)
+- [ ] cabal(?)
+- [ ] msbuild(?)
 *** Supported user interfaces
 - [ ] ivy
 - [ ] helm
