@@ -1,5 +1,8 @@
-;; Variables which contain constant targets present in build systems such as
-;; cargo(Rust) or go(Golang)
+;; Variables which contain constant targets present in build systems.
+;; Support for:
+;; - Rust/cargo
+;; - Golang/go
+;; - Emacs/Cask
 
 (defvar taskrunner--rust-targets '("RUST build"
                                    "RUST check"
@@ -34,5 +37,29 @@ Included in taskrunner output only when Cargo.toml is present if project root.")
   "Targets used in the Golang build systems.
 Included in taskrunner output only when go.mod or go.sum are present in
 project root.")
+
+(defvar taskrunner--cast-targets '("CASK exec"
+                                   "CASK emacs"
+                                   "CASK eval"
+                                   "CASK help"
+                                   "CASK info"
+                                   "CASK install"
+                                   "CASK list"
+                                   "CASK load-path"
+                                   "CASK outdated"
+                                   "CASK pkg-file"
+                                   "CASK package-directory"
+                                   "CASK path"
+                                   "CASK update"
+                                   "CASK upgrade-cask"
+                                   "CASK version"
+                                   "CASK files"
+                                   "CASK build"
+                                   "CASK clean-elc"
+                                   "CASK link"
+                                   "CASK package")
+  "Targets used in the Emacs Cask build/project management system.
+Included in the taskrunner output only when a file named `Cask' is present
+in the project root.")
 
 (provide 'taskrunner-static-targets)

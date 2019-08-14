@@ -84,6 +84,8 @@ updating the cache."
     (if (or (member "go.mod" work-dir-files)
             (member "go.sum" work-dir-files))
         (setq tasks (append tasks taskrunner--golang-targets)))
+    (if (member "Cask" work-dir-files)
+        (setq tasks (append tasks taskrunner--cast-targets)))
     tasks
     )
   )
