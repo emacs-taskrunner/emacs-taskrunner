@@ -15,11 +15,35 @@
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
 
+(defun taskrunner-get-last-command-ran (&optional dir)
+  "Retrieve the last task ran in currently visited project or in directory DIR.
+If the project does not exist, return nil."
+  (let ((proj-dir (if dir
+                      (intern dir)
+                    (intern (projectile-project-root)))))
+    (alist-get proj-dir taskrunner-last-command-cache nil)
+    )
+  )
+
+(defun taskrunner-set-last-command-ran (dir command)
+  "Set the command COMMAND to be the last ran for project in directory DIR."
+  ;; Remove the the previous command if it exists. Assoc-delete-all does not
+  ;; throw an error so it is safe
+  (let ((new-command-cache (assoc-delete-all (intern dir)
+                                             taskrunner-last-command-cache)))
+    ;; Reset the cache with new command added
+    (setq taskrunner-last-command-cache (push (cons (intern dir) command) new-command-cache))
+    )
+  )
+
 (defun taskrunner-collect-tasks (dir)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
 'TASK-RUNNER-PROGRAM TASK-NAME'.  This is done for the purpose of working with
-projects which might use multiple task runners."
+projects which might use multiple task runners.
+
+Use this function if you want to retrieve the tasks from a project without
+updating the cache."
   (let ((work-dir-files (directory-files dir))
         (tasks '()))
     (if (member "package.json" work-dir-files)
@@ -78,7 +102,6 @@ Return t or nil."
       nil)
     )
   )
-
 
 (defun taskrunner-refresh-cache (&optional dir)
   "Retrieve all tasks for the current project and load them in the cache.
