@@ -79,7 +79,7 @@ instead."
     (when beg
       (narrow-to-region beg end)
       (map 'list (lambda (elem)
-                   (concat "GULP" " " (car (split-string (string-trim elem) " "))))
+                   (concat "GRUNT" " " (car (split-string (string-trim elem) " "))))
            (split-string (buffer-string) "\n")))
     )
   )
