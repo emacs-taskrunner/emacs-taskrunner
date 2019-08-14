@@ -1,51 +1,42 @@
 * Emacs Taskrunner
 This is an elisp library which aims to provide a way to retrieve all of the
-tasks/targets from various build systems and execute them in a comint buffer.
+tasks/targets from various build systems and execute them in a compilation buffer.
 
-Currently, this project is in its very early stages and is not very usable. A
-lot of the code simply uses ~message~ to display the tasks in the message buffer.
-
-The ultimate goal is to use this library to provide an interactive interface through
-helm/ivy/ido which will let the user select tasks and run them. Additionally, it
-will also provide a task caching mechanism so the tasks do not have to be
-retrieved over and over again. 
+The ultimate goal is to use this library to provide the data necessary for an
+interactive interface through helm/ivy/ido which will let the user select tasks
+and run them. Additionally, it will also provide a task caching mechanism so the
+tasks do not have to be retrieved over and over again.
 
 A larger goal to be looked at down the line would be to use async
 processes/threads so emacs does not freeze while the processes are being
 retrieved. For the time being, the main focus is to find a way to reliably parse
 and return all tasks from a project directory and execute them.
 
-* Supported Systems
-** Currently working on
-So far, work has began on supporting the following build/taskrunner systems:
-- [X] yarn/npm(package.json tasks)
+* Project Status
+Currently, this project is somewhat usable. An simple ~ivy~ interfaces has been
+built which can be used to select tasks and run them.
+** Supported Systems
+*** Systems which this package aims to support
+- [X] yarn/npm
 - [X] Gulp
 - [X] Grunt
-- [ ] Gradle
-- [ ] Make
-- [ ] CMake
-- [ ] rake
-
-If a checkbox is checked then that means that the tasks from that system can be
-reliably extracted.
-
-** Systems which this package aims to support
-- [ ] yarn/npm
-- [ ] Gulp
-- [ ] Grunt
-- [ ] Gradle
-- [ ] Jake?
+- [X] Gradle
+- [X] Jake
 - [ ] Make
 - [ ] CMake
 - [ ] Ninja
 - [ ] Meson
 - [ ] Buck
 - [ ] sbt
-- [ ] mix
-- [ ] leinengen
-- [ ] apache ant
+- [X] mix
+- [X] leinengen
+- [X] apache ant
 - [ ] apache maven
-- [ ] rake
+- [X] rake
 - [ ] stack?
 - [ ] cabal?
 - [ ] msbuild?
+*** Supported user interfaces
+- [ ] ivy
+- [ ] helm
+- [ ] ido
