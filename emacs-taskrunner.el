@@ -15,7 +15,7 @@
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
 
-(defun taskrunner--collect-tasks (dir)
+(defun taskrunner-collect-tasks (dir)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
 'TASK-RUNNER-PROGRAM TASK-NAME'.  This is done for the purpose of working with
@@ -42,14 +42,8 @@ projects which might use multiple task runners."
     )
   )
 
-;; Quick test with avy
-;; (ivy-read "Task: "
-;;           (taskrunner--get-tasks "~/clones/grunt-demo/")
-;;           :require-match t
-;;           :action (lambda (choice)
-;;                     (message choice)))
 
-(defun taskrunner-get-tasks (&optional dir)
+(defun taskrunner-get-tasks-from-cache (&optional dir)
   "Retrieve the cached tasks from the directory DIR or the current project.
 If the project does not have any tasks cached then collect all tasks and update
 the cache.  If the tasks exist then simply return them.  The tasks returned are
@@ -61,7 +55,7 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
     ;; If the tasks do not exist, retrieve them first and then add to cache
     (if (not proj-tasks)
         (progn
-          (setq proj-tasks (taskrunner--collect-tasks proj-root))
+          (setq proj-tasks (taskrunner-collect-tasks proj-root))
           ;; Add the project to the list. Use a symbol for faster comparison
           (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
           )
@@ -71,9 +65,20 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
     )
   )
 
-;; (setq taskrunner-tasks-cache '())
-;; taskrunner-tasks-cache
-;; (message "%s" (taskrunner-get-tasks "~/clones/grunt-demo/"))
+(defun taskrunner-project-cached-p (&optional dir)
+  "Check if either the current project or the one in directory DIR are cached.
+Return t or nil."
+  (let ((proj-root (if dir
+                       (intern dir)
+                     (intern (projectile-project-root)))))
+    ;; Cannot simply return the cache contents to the caller so use this to
+    ;; make sure that either t or nil is returned.
+    (if (assoc proj-root taskrunner-tasks-cache)
+        t
+      nil)
+    )
+  )
+
 
 (defun taskrunner-refresh-cache (&optional dir)
   "Retrieve all tasks for the current project and load them in the cache.
@@ -86,6 +91,16 @@ again."
     (message "Not in a project!"))
   )
 
+;; Quick tests
+;; (ivy-read "Task: "
+;;           (taskrunner--get-tasks "~/clones/grunt-demo/")
+;;           :require-match t
+;;           :action (lambda (choice)
+;;                     (message choice)))
+
+;; (setq taskrunner-tasks-cache '())
+;; taskrunner-tasks-cache
+;; (message "%s" (taskrunner-get-tasks "~/clones/grunt-demo/"))
 
 ;; Currently not used. Will be used when moving retrieval functions to async
 ;; (defun taskrunner--create-process (dir commands run-in-compile &optional
