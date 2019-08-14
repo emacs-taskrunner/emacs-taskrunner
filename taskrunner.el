@@ -67,11 +67,16 @@ updating the cache."
             (member "Rakefile" work-dir-files)
             (member "rakefile.rb" work-dir-files)
             (member "Rakefile.rb" work-dir-files))
-        (setq tasks (append tasks (taskrunner--ruby-get-rake-tasks dir))))
+        (setq tasks (append tasks (taskrunner--get-rake-tasks dir))))
     (if (or (member "gradlew" work-dir-files)
             (member "gradlew.bat" work-dir-files)
             (member "build.gradle" work-dir-files))
         (setq tasks (append tasks (taskrunner--get-gradle-tasks dir))))
+    (if (member "Cargo.toml" work-dir-files)
+        (setq tasks (append tasks taskrunner--rust-targets)))
+    (if (or (member "go.mod" work-dir-files)
+            (member "go.sum" work-dir-files))
+        (setq tasks (append tasks taskrunner--golang-targets)))
     tasks
     )
   )
@@ -129,24 +134,6 @@ containing the new tasks."
     proj-tasks
     )
   )
-
-
-;; Currently not used. Will be used when moving retrieval functions to async
-;; (defun taskrunner--create-process (dir commands run-in-compile &optional
-;;                                        buff-name sentinel process-name)
-;;   "Run the command COMMAND in the directory DIR. If RUN-IN-COMPILE is t
-;; then run the command in compilation mode, otherwise run an async process."
-;;   (let ((default-directory dir))
-;;     (if (not run-in-compile)
-;;         (progn
-;;           (make-process
-;;            :name process-name
-;;            :buffer buff-name
-;;            :command commands
-;;            :sentinel sentinel))
-;;       )
-;;     )
-;;   )
 
 (provide 'taskrunner)
 ;;; emacs-taskrunner.el ends here

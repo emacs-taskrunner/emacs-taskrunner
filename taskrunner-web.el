@@ -108,18 +108,4 @@ instead."
     )
   )
 
-;; This will be used when I being work on making task retrieval async!
-;; (defun taskrunner--grunt-process-sentinel (process event)
-;;   "Sentinel used to retrieve the grunt tasks from an async process."
-;;   (cond
-;;    ((string-match-p "finished" event)
-;;     (message" Done!")
-;;     (with-temp-buffer
-;;       (set-buffer (process-buffer process))
-;;       (taskrunner--get-grunt-tasks-from-buffer))
-;;     )
-;;    (t
-;;     (message "Failure to retrieve tasks from grunt! Error produced was %s" event)))
-;;   )
-
 (provide 'taskrunner-web)
