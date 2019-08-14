@@ -3,7 +3,7 @@
 (require 'projectile)
 (require 'taskrunner-clang)
 (require 'taskrunner-web)
-(require 'taskrunner-gradle)
+(require 'taskrunner-java)
 (require 'taskrunner-ruby)
 (require 'taskrunner-static-targets)
 (require 'taskrunner-mix)
