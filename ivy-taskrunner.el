@@ -3,9 +3,26 @@
 (require 'ivy)
 (require 'taskrunner)
 
-(defun ivy-taskrunner--main-action (task)
+(defvar ivy-taskrunner-extra-actions-list
+  '(("a" 'ivy-taskrunner-run-task-with-args "Run task and pass args")
+    ("c" 'ivy-taskrunner-run-task-with-args "Run task in current folder without args")
+    ("C" 'ivy-taskrunner-run-task-with-args "Run task in current folder with args")
+    )
+  "A list of extra actions to be used when running a task selected through ivy.")
+
+(defun ivy-taskrunner--run-task-no-args (task)
   "Run the task TASK chosen through the ivy interface."
   (message task))
+
+(defun ivy-taskrunner-run-task-with-args (task)
+  "Run the task TASK and ask the user to supply extra arguments."
+  (let ((extra-args (read-string "Arguments/Flags to pass to task: ")))
+    (if extra-args
+        (taskrunner-run-task (concat task " " extra-args))
+      (taskrunner-run-task task)
+      )
+    )
+  )
 
 (defun ivy-taskrunner ()
   "Launch ivy to select a task to run in the current project."
@@ -25,6 +42,12 @@
     ;; Run ivy interface only if the current buffer is in a project, otherwise
     ;; do nothing
     (when in-project-p
+      ;; Add extra actions
+      (ivy-set-actions
+       'ivy-taskrunner
+       ivy-taskrunner-extra-actions-list)
+      
+      ;; Run ivy
       (ivy-read "Task to run: "
                 (taskrunner-get-tasks-from-cache)
                 :require-match t
