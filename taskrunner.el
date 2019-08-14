@@ -5,6 +5,9 @@
 (require 'taskrunner-web)
 (require 'taskrunner-gradle)
 (require 'taskrunner-ruby)
+(require 'taskrunner-static-targets)
+(require 'taskrunner-mix)
+(require 'taskrunner-leiningen)
 
 (defgroup taskrunner nil
   "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively.")
@@ -72,6 +75,10 @@ updating the cache."
             (member "gradlew.bat" work-dir-files)
             (member "build.gradle" work-dir-files))
         (setq tasks (append tasks (taskrunner--get-gradle-tasks dir))))
+    (if (member "mix.exs" work-dir-files)
+        (setq tasks (append tasks (taskrunner--start-elixir-task-process dir))))
+    (if (member "project.clj" work-dir-files)
+        (setq tasks (append tasks (taskrunner--start-leiningen-task-process dir))))
     (if (member "Cargo.toml" work-dir-files)
         (setq tasks (append tasks taskrunner--rust-targets)))
     (if (or (member "go.mod" work-dir-files)
