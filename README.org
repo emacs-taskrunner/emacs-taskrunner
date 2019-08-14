@@ -18,9 +18,9 @@ and return all tasks from a project directory and execute them.
 * Supported Systems
 ** Currently working on
 So far, work has began on supporting the following build/taskrunner systems:
-- [ ] yarn/npm(package.json tasks)
-- [ ] Gulp
-- [ ] Grunt
+- [X] yarn/npm(package.json tasks)
+- [X] Gulp
+- [X] Grunt
 - [ ] Gradle
 - [ ] Make
 - [ ] CMake

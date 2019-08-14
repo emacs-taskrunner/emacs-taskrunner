@@ -16,8 +16,6 @@ All names are prefixed with the string provided by PREFIX."
     )
   )
 
-(taskrunner--get-shell-scripts "~/pprojects/em-taskrunner/")
-
 (defun taskrunner--get-bash-scripts (dir)
   "Retrieve all bash scripts in directory DIR."
   (taskrunner--get-scripts dir "\\.sh$" "BASH"))
