@@ -37,6 +37,14 @@ If the project does not exist, return nil."
     )
   )
 
+(defun taskrunner-delete-tasks-cache ()
+  "Delete the entire task cache."
+  (setq taskrunner-tasks-cache '()))
+
+(defun taskrunner-delete-last-command-cache ()
+  "Delete the entire last command cache."
+  (setq taskrunner-last-command-cache '()))
+
 (defun taskrunner-collect-tasks (dir)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
@@ -75,7 +83,7 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
   (let* ((proj-root (if dir
                         dir
                       (projectile-project-root)))
-         (proj-tasks (assoc (intern proj-root) taskrunner-tasks-cache)))
+         (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache)))
     ;; If the tasks do not exist, retrieve them first and then add to cache
     (if (not proj-tasks)
         (progn
@@ -121,9 +129,6 @@ containing the new tasks."
     )
   )
 
-(defun taskrunner-delete-tasks-cache ()
-  "Delete the entire task cache."
-  (setq taskrunner-tasks-cache '()))
 
 ;; Currently not used. Will be used when moving retrieval functions to async
 ;; (defun taskrunner--create-process (dir commands run-in-compile &optional
