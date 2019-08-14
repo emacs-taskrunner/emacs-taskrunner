@@ -3,7 +3,7 @@
 ;; Copyright (C) 2019 Yavor Konstantinov
 
 ;; Author: Yavor Konstantinov <ykonstantinov1 AT gmail DOT com>
-;; URL: http://example.com/package-name.el
+;; URL: https://github.com/emacs-taskrunner/emacs-taskrunner
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "24"))
 ;; Keywords: build-system taskrunner build task-runner tasks

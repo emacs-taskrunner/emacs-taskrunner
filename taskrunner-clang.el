@@ -1,7 +1,9 @@
-;; Functions, variables and messages used in the process of retrieving tasks
-;; for any build/task system typically used for C/C++/C# languages.
+;;; taskrunner-clang.el --- Provide functions to retrieve c/c++ build system targets -*- lexical-binding: t; -*-
+;; Copyright (C) 2019 Yavor Konstantinov
+
 (require 'projectile)
 
+;;;; Constants
 (defconst taskrunner--make-phony-target-regexp "^\.PHONY[[:space:]]+:[[:space:]]+"
   "Regular expression used to locate all PHONY targets in makefile.")
 
@@ -14,6 +16,7 @@ CMake for either insource or outsource build and then call emacs-taskrunner agai
   "A warning string used to indicate that a CMake project was detected but no
 build folder or makefile was found.")
 
+;;;; Functions
 (defun taskrunner--narrow-to-line ()
   "Narrow the buffer to the current line."
   (narrow-to-region (progn
@@ -53,3 +56,4 @@ build folder or makefile was found.")
   )
 
 (provide 'taskrunner-clang)
+;;; taskrunner-clang.el ends here

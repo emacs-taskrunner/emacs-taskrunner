@@ -1,10 +1,17 @@
-;; Functions/warnings/varibles related to retrieving and working with
-;; tasksrunners which are usually used in web projects.
-;; Included here are:
+;;; taskrunner-web.el --- Provide functions to retrieve tasks for web build systems-*- lexical-binding: t; -*-
+;; Copyright (C) 2019 Yavor Konstantinov
+
+;; Support included for:
 ;; - yarn/npm
 ;; - gulp
 ;; - grunt
 ;; - jake
+
+;;;; Required
+(require 'json)
+(require 'subr-x)
+
+;;;; Customizable
 
 (defcustom taskrunner-preferred-js-package-manager nil
   "The preferred package manager to be used for tasks from package.json.
@@ -16,11 +23,15 @@ variable is nil then `npm' is used as default."
   :options '("npm" "yarn")
   :group 'emacs-taskrunner)
 
+;;;; Variables
+
 (defconst taskrunner--js-gulp-tasks-command "gulp --tasks-simple"
   "Command used to retrieve the tasks for Gulp.")
 
 (defconst taskrunner--jake-tasks-command "jake -T"
   "Command used to retrieve tasks from the Jake taskrunner.")
+
+;;;; Functions
 
 (defun taskrunner--yarn-or-npm (dir)
   "Detect if the current project in directory DIR is using `yarn' or `npm'.
@@ -109,3 +120,4 @@ instead."
   )
 
 (provide 'taskrunner-web)
+;;; taskrunner-web.el ends here
