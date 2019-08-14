@@ -1,4 +1,78 @@
-;; Emacs taskrunner
+;;; taskrunner.el --- Retrieve build system/taskrunner tasks  -*- lexical-binding: t; -*-
+
+;; Copyright (C) 2019 Yavor Konstantinov
+
+;; Author: Yavor Konstantinov <ykonstantinov1 AT gmail DOT com>
+;; URL: http://example.com/package-name.el
+;; Version: 0.5
+;; Package-Requires: ((emacs "24"))
+;; Keywords: build-system taskrunner build task-runner tasks
+
+;; This file is not part of GNU Emacs.
+
+;;; Commentary:
+;; This package aims to provide a library which can be used to retrieve tasks
+;; from several build systems and task runners.  The output produced can then be
+;; leveraged to create interactive user interfaces(helm/ivy for example) which
+;; will let the user select a task to be ran.
+
+;;;; Installation
+
+;;;;; MELPA
+
+;; If you installed from MELPA, then make sure to also install one of the
+;; available frontends for this.  They are:
+;; - ivy-taskrunner <- Uses ivy as a frontend
+;; - helm-taskrunner <- Uses helm as a frontend
+;; - ido-taskrunner <- Uses Ido as a frontend
+
+;;;;; Manual
+
+;; Install these required packages:
+
+;; projectile
+
+;; Then put this folder in your load-path, and put this in your init:
+
+;; (require 'taskrunner)
+
+;;;; Usage
+
+;; Please see README for more details on the interfaces and customizable options
+;; available.  This package is not meant to be used itself unless you are
+;; developing a new frontend
+
+;;;; Credits
+
+;; This package would not have been possible without the following
+;; packages:
+;; grunt.el[1] which helped me retrieve the tasks from grunt
+;; gulp-task-runner[2] which helped me retrieve the tasks from gulp
+;; helm-make[3] which helped me figure out the regexps needed to retrieve
+;;              makefile targets
+;;
+;;  [1] https://github.com/gempesaw/grunt.el
+;;  [2] https://github.com/NicolasPetton/gulp-task-runner/tree/877990e956b1d71e2d9c7c3e5a129ad199b9debb
+;;  [3] https://github.com/abo-abo/helm-make
+
+;;; License:
+
+;; This program is free software; you can redistribute it and/or modify
+;; it under the terms of the GNU General Public License as published by
+;; the Free Software Foundation, either version 3 of the License, or
+;; (at your option) any later version.
+
+;; This program is distributed in the hope that it will be useful,
+;; but WITHOUT ANY WARRANTY; without even the implied warranty of
+;; MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+;; GNU General Public License for more details.
+
+;; You should have received a copy of the GNU General Public License
+;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+;;; Code:
+
+;;;; Requirements
 
 (require 'projectile)
 (require 'taskrunner-clang)
@@ -12,12 +86,16 @@
 (defgroup taskrunner nil
   "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively.")
 
+;; Variables:
+
 (defvar taskrunner-last-command-cache '()
   "A cache used to store the last executed command for each project.")
 
 (defvar taskrunner-tasks-cache '()
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
+
+;; Functions:
 
 (defun taskrunner-get-last-command-ran (&optional dir)
   "Retrieve the last task ran in currently visited project or in directory DIR.
@@ -158,5 +236,7 @@ containing the new tasks."
     )
   )
 
+;;;; Footer:
+
 (provide 'taskrunner)
-;;; emacs-taskrunner.el ends here
+;;; taskrunner.el ends here
