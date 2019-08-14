@@ -72,4 +72,57 @@
     )
   )
 
+(defun taskrunner--retrieve-ant-tasks-from-buffer ()
+  "Retrieve all and tasks from the current buffer.
+This function is meant to be used with the output of `ant -verbose -p'.
+If you need to retrieve tasks from ant, use the function 
+`taskrunner--get-ant-tasks' instead of this."
+  (goto-line 1)
+  (let ((beg (search-forward-regexp "Main targets:\n\n" nil t))
+        (ant-tasks '()))
+    (narrow-to-region (point-at-bol)
+                      (progn
+                        (search-forward-regexp "Other targets:")
+                        (previous-line 1)
+                        (point-at-eol)))
+    (map 'list (lambda (elem)
+                 (push (concat "ANT" " "  (car (split-string (string-trim elem) " "))) ant-tasks))
+         (split-string (buffer-string) "\n"))
+    (widen)
+    (goto-line 1)
+    (narrow-to-region (progn
+                        (search-forward-regexp "Other targets:\n\n" nil t)
+                        (point-at-bol))
+                      (if (search-forward-regexp "Default target:" nil t)
+                          (progn
+                            (previous-line 1)
+                            (point-at-eol))
+                        (progn
+                          (goto-char (point-max))
+                          (point-at-eol))
+                        ))
+    (map 'list (lambda (elem)
+                 (push (concat "ANT" " "  (car (split-string (string-trim elem) " "))) ant-tasks))
+         ;; (mesage "%s" elem))
+         (split-string (buffer-string) "\n"))
+    (kill-current-buffer)
+    ant-tasks
+    )
+  )
+
+(defun taskrunner--get-ant-tasks (dir)
+  "Retrieve all ant tasks from the project in directory DIR."
+  (let ((default-directory dir)
+        (buff (get-buffer-create taskrunner-gradle-tasks-buffer-name))
+        (ant-tasks '())
+        )
+    (call-process "ant"  nil taskrunner-gradle-tasks-buffer-name  nil "-verbose" "-p")
+    (with-temp-buffer
+      (set-buffer buff)
+      (taskrunner--retrieve-ant-tasks-from-buffer)
+      )
+    )
+  )
+
+;; (taskrunner--get-ant-tasks "~/clones/ant-example")
 (provide 'taskrunner-gradle)
