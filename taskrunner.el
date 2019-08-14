@@ -135,5 +135,19 @@ containing the new tasks."
     )
   )
 
+(defun taskrunner-run-task (task &optional dir)
+  "Run command TASK in project root or directory DIR if provided."
+  (let* ((default-directory (if dir
+                                dir
+                              (projectile-project-root)))
+         (taskrunner-program (downcase (car (split-string task " "))))
+         )
+    (compile
+     ;; Downcase the first word which indicates the taskrunner
+     (concat taskrunner-program " " (mapconcat 'identity (cdr (split-string task " ")) " "))
+     t)
+    )
+  )
+
 (provide 'taskrunner)
 ;;; emacs-taskrunner.el ends here
