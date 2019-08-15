@@ -132,6 +132,13 @@ If the project does not exist, return nil."
   "Delete the entire last command cache."
   (setq taskrunner-last-command-cache '()))
 
+
+;; TODO: Add support for:
+;; Jake
+;; CMake
+;; Make
+;; Parsers for them are already created
+
 (defun taskrunner-collect-tasks (dir)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
@@ -144,32 +151,76 @@ updating the cache."
         (tasks '()))
     (if (member "package.json" work-dir-files)
         (setq tasks (append tasks (taskrunner--js-get-package-tasks dir))))
+
     (if (or (member "gulpfile.js" work-dir-files)
             (member "Gulpfile.js" work-dir-files))
         (setq tasks (append tasks (taskrunner--js-get-gulp-tasks dir))))
+
     (if (or (member "Gruntfile.js" work-dir-files)
             (member "Gruntfile.coffee" work-dir-files))
         (setq tasks (append tasks (taskrunner--get-grunt-tasks dir))))
+
     (if (or (member "rakefile" work-dir-files)
             (member "Rakefile" work-dir-files)
             (member "rakefile.rb" work-dir-files)
             (member "Rakefile.rb" work-dir-files))
         (setq tasks (append tasks (taskrunner--get-rake-tasks dir))))
+
     (if (or (member "gradlew" work-dir-files)
             (member "gradlew.bat" work-dir-files)
             (member "build.gradle" work-dir-files))
         (setq tasks (append tasks (taskrunner--get-gradle-tasks dir))))
+
     (if (member "mix.exs" work-dir-files)
         (setq tasks (append tasks (taskrunner--start-elixir-task-process dir))))
+
     (if (member "project.clj" work-dir-files)
         (setq tasks (append tasks (taskrunner--start-leiningen-task-process dir))))
+
     (if (member "Cargo.toml" work-dir-files)
         (setq tasks (append tasks taskrunner--rust-targets)))
+
     (if (or (member "go.mod" work-dir-files)
             (member "go.sum" work-dir-files))
         (setq tasks (append tasks taskrunner--golang-targets)))
+
     (if (member "Cask" work-dir-files)
         (setq tasks (append tasks taskrunner--cast-targets)))
+
+    ;; Cmake project. If it is an insource build then nothing is done
+    ;; and the makefile contents are extracted in the statements below
+    ;; otherwise, try to look for a build folder. If none is found
+    (if (member "CMakeLists.txt" work-dir-files)
+        )
+
+    ;; Handle general makefiles at project root
+    ;; TODO: If the makefile to be parsed is open in a buffer, it will be closed.
+    ;;       Need to find a way to make it stay open if the buffer already exists
+    ;; TODO: This is a bit repetitive/verbose. Could it be shortened?
+    (cond
+     ((member "Makefile" work-dir-files)
+      (with-temp-buffer
+        (find-file-read-only
+         (concat dir "Makefile"))
+        (setq tasks (append tasks (taskrunner-get-make-targets taskrunner-retrieve-all-make-targets)))
+        )
+      )
+     ((member "makefile" work-dir-files)
+      (with-temp-buffer
+        (find-file-read-only
+         (concat dir "makefile"))
+        (setq tasks (append tasks (taskrunner-get-make-targets taskrunner-retrieve-all-make-targets)))
+        )
+      )
+     ((member "GNUmakefile" work-dir-files)
+      (with-temp-buffer
+        (find-file-read-only
+         (concat dir "GNumakefile"))
+        (setq tasks (append tasks (taskrunner-get-make-targets taskrunner-retrieve-all-make-targets)))
+        )
+      )
+     )
+
     tasks
     )
   )
@@ -236,13 +287,15 @@ containing the new tasks."
          (taskrunner-program (downcase (car (split-string task " "))))
          )
     (compile
-     ;; Downcase the first word which indicates the taskrunner
-     (concat taskrunner-program " " (mapconcat 'identity (cdr (split-string task " ")) " "))
+     ;; Downcase the first word which indicates the taskrunner and join
+     ;; the rest of the arguments as a single string
+     (concat taskrunner-program " " (mapconcat 'identity
+                                               (cdr (split-string task " ")) " "))
      t)
     )
   )
 
-;;;; Footer:
+;;;; Footer
 
 (provide 'taskrunner)
 ;;; taskrunner.el ends here

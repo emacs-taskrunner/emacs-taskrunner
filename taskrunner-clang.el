@@ -3,6 +3,12 @@
 
 (require 'projectile)
 
+(defcustom taskrunner-retrieve-all-make-targets t
+  "Variable indicates whether or not to always retrieve both phony and non-phony targets."
+  :type 'symbol
+  :options '(t nil)
+  :group 'taskrunner)
+
 ;;;; Constants
 (defconst taskrunner--make-phony-target-regexp "^\.[[:space:]]*PHONY[[:space:]]*:[[:space:]]*"
   "Regular expression used to locate all PHONY targets in makefile.")
@@ -50,6 +56,20 @@ The targets retrieved are every line of the form `.PHONY'."
   target-list
   )
 )
+
+(defun taskrunner-get-make-targets (all)
+  "Retrieve make targets from the currently visted makefile buffer.
+If ALL is non-nil then retrieve all targets possible(phony/non-phony)"
+  (let ((targets '()))
+    (setq targets (append targets (taskrunner--make-get-phony-targets)))
+    ;; Non-phony targets are only retrieved when specified
+    (when all
+      (setq targets (append targets (taskrunner--make-get-non-phony-targets))))
+    ;; TODO: This might pose problems if the makefile buffer is already open
+    (kill-current-buffer)
+    ;; Return targets
+    targets
+    ))
 
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here
