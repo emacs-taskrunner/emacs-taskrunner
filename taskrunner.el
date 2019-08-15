@@ -97,6 +97,12 @@ It is an alist of the form (project-root . list-of-tasks)")
 
 ;; Functions:
 
+(defun taskrunner--narrow-to-line ()
+  "Narrow to the line entire line that the point lies on."
+  (narrow-to-region (point-at-bol)
+                    (point-at-eol))
+  )
+
 (defun taskrunner-get-last-command-ran (&optional dir)
   "Retrieve the last task ran in currently visited project or in directory DIR.
 If the project does not exist, return nil."
