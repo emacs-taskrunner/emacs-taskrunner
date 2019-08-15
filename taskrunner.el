@@ -134,9 +134,7 @@ If the project does not exist, return nil."
 
 
 ;; TODO: Add support for:
-;; Jake
 ;; CMake
-;; Make
 ;; Parsers for them are already created
 
 (defun taskrunner-collect-tasks (dir)
@@ -149,6 +147,7 @@ Use this function if you want to retrieve the tasks from a project without
 updating the cache."
   (let ((work-dir-files (directory-files dir))
         (tasks '()))
+
     (if (member "package.json" work-dir-files)
         (setq tasks (append tasks (taskrunner--js-get-package-tasks dir))))
 
@@ -159,6 +158,11 @@ updating the cache."
     (if (or (member "Gruntfile.js" work-dir-files)
             (member "Gruntfile.coffee" work-dir-files))
         (setq tasks (append tasks (taskrunner--get-grunt-tasks dir))))
+
+    (if (or (member "Jakefile.js" work-dir-files)
+            (member "Jakefile" work-dir-files)
+            (member "Jakefile.coffee" work-dir-files))
+        (setq tasks (append tasks (taskrunner--get-jake-tasks dir))))
 
     (if (or (member "rakefile" work-dir-files)
             (member "Rakefile" work-dir-files)

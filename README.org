@@ -30,7 +30,7 @@ built which can be used to select tasks and run them.
 - [X] go(Golang)
 - [X] Cask
 - [ ] sbt
-- [ ] Make
+- [X] Make
 - [ ] CMake
 - [ ] Ninja
 - [ ] Meson
@@ -40,6 +40,6 @@ built which can be used to select tasks and run them.
 - [ ] cabal(?)
 - [ ] msbuild(?)
 *** Supported user interfaces
-- [ ] ivy
+- [X] ivy
 - [ ] helm
 - [ ] ido
