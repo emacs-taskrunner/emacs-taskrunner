@@ -198,6 +198,10 @@ updating the cache."
     (if (member "Cask" work-dir-files)
         (setq tasks (append tasks taskrunner--cast-targets)))
 
+    (if (member "stack.yaml" work-dir-files)
+        (setq tasks (append tasks taskrunner--stack-targets)))
+
+
     ;; Cmake project. If it is an insource build then nothing is done
     ;; and the makefile contents are extracted in the statements below
     ;; otherwise, try to look for a build folder. If none is found
