@@ -123,14 +123,14 @@ If the project does not exist, return nil."
     )
   )
 
-(defun taskrunner-set-last-command-ran (proj-root dir command)
-  "Set the command COMMAND to be the last ran for project in directory DIR."
+(defun taskrunner-set-last-command-ran (ROOT DIR COMMAND)
+  "Set the COMMAND ran in DIR to be the last command ran for project in ROOT."
   ;; Remove the the previous command if it exists. Assoc-delete-all does not
   ;; throw an error so it is safe
-  (let ((new-command-cache (assoc-delete-all (intern proj-root)
+  (let ((new-command-cache (assoc-delete-all (intern ROOT)
                                              taskrunner-last-command-cache)))
     ;; Reset the cache with new command added
-    (setq taskrunner-last-command-cache (push (list (intern proj-root) dir command) new-command-cache))
+    (setq taskrunner-last-command-cache (push (list (intern ROOT) DIR COMMAND) new-command-cache))
     )
   )
 
@@ -143,7 +143,7 @@ If the project does not exist, return nil."
   (setq taskrunner-last-command-cache '()))
 
 
-(defun taskrunner-collect-tasks (dir)
+(defun taskrunner-collect-tasks (DIR)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
 'TASK-RUNNER-PROGRAM TASK-NAME'.  This is done for the purpose of working with
@@ -151,7 +151,7 @@ projects which might use multiple task runners.
 
 Use this function if you want to retrieve the tasks from a project without
 updating the cache."
-  (let ((work-dir-files (directory-files dir))
+  (let ((work-dir-files (directory-files DIR))
         (tasks '()))
 
     (if (member "package.json" work-dir-files)
@@ -235,13 +235,13 @@ updating the cache."
     )
   )
 
-(defun taskrunner-get-tasks-from-cache (&optional dir)
+(defun taskrunner-get-tasks-from-cache (&optional DIR)
   "Retrieve the cached tasks from the directory DIR or the current project.
 If the project does not have any tasks cached then collect all tasks and update
 the cache.  If the tasks exist then simply return them.  The tasks returned are
 in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
-  (let* ((proj-root (if dir
-                        dir
+  (let* ((proj-root (if DIR
+                        DIR
                       (projectile-project-root)))
          (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache)))
     ;; If the tasks do not exist, retrieve them first and then add to cache
@@ -257,11 +257,11 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
     )
   )
 
-(defun taskrunner-project-cached-p (&optional dir)
+(defun taskrunner-project-cached-p (&optional DIR)
   "Check if either the current project or the one in directory DIR are cached.
 Return t or nil."
-  (let ((proj-root (if dir
-                       (intern dir)
+  (let ((proj-root (if DIR
+                       (intern DIR)
                      (intern (projectile-project-root)))))
     ;; Cannot simply return the cache contents to the caller so use this to
     ;; make sure that either t or nil is returned.
@@ -271,13 +271,13 @@ Return t or nil."
     )
   )
 
-(defun taskrunner-refresh-cache (&optional dir)
+(defun taskrunner-refresh-cache (&optional DIR)
   "Retrieve all tasks for project in DIR or the current project and set cache.
 If there were tasks previously loaded then remove them, retrieve all tasks
 again and set the corresponding project to the new list.  Return a list
 containing the new tasks."
-  (let* ((proj-root (if dir
-                        dir
+  (let* ((proj-root (if DIR
+                        DIR
                       (projectile-project-root)))
          (proj-tasks (taskrunner-collect-tasks proj-root)))
     ;; remove old tasks if they exist
