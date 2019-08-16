@@ -44,7 +44,8 @@
 
 ;; Please see README for more details on the interfaces and customizable options
 ;; available.  This package is not meant to be used itself unless you are
-;; developing a new frontend
+;; developing a new frontend or would like to retrieve information about the
+;; available tasks in a project/directory.
 
 ;;;; Credits
 

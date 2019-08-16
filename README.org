@@ -13,10 +13,11 @@ retrieved. For the time being, the main focus is to find a way to reliably parse
 and return all tasks from a project directory and execute them.
 
 * Project Status
-Currently, this project is somewhat usable. An simple ~ivy~ interfaces has been
-built which can be used to select tasks and run them.
+Currently, this project can is stable and can be used for the following
+systems/frontends listed below.
 ** Supported Systems
-*** Systems which this package aims to support
+*** Currently supported
+**** Build/Task Systems
 - [X] yarn/npm
 - [X] Gulp
 - [X] Grunt
@@ -29,8 +30,13 @@ built which can be used to select tasks and run them.
 - [X] cargo(Rust)
 - [X] go(Golang)
 - [X] Cask
-- [ ] sbt
 - [X] Make
+**** User interfaces
+- [X] ivy
+- [X] helm
+- [ ] ido
+*** Planning to add support for
+- [ ] sbt
 - [ ] CMake
 - [ ] Ninja
 - [ ] Meson
@@ -39,7 +45,3 @@ built which can be used to select tasks and run them.
 - [ ] stack(?)
 - [ ] cabal(?)
 - [ ] msbuild(?)
-*** Supported user interfaces
-- [X] ivy
-- [ ] helm
-- [ ] ido
