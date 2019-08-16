@@ -103,8 +103,8 @@ It is an alist of the form (project-root . list-of-tasks)")
                     (point-at-eol))
   )
 
-(defun taskrunner-get-last-command-ran (&optional dir)
-  "Retrieve the last task ran in currently visited project or in directory DIR.
+(defun taskrunner-get-last-command-ran (&optional root)
+  "Retrieve the last task ran in currently visited project or in directory ROOT.
 If the project does not exist, return nil."
   (let ((proj-dir (if dir
                       (intern dir)
@@ -113,29 +113,25 @@ If the project does not exist, return nil."
     )
   )
 
-(defun taskrunner-set-last-command-ran (dir command)
+(defun taskrunner-set-last-command-ran (proj-root dir command)
   "Set the command COMMAND to be the last ran for project in directory DIR."
   ;; Remove the the previous command if it exists. Assoc-delete-all does not
   ;; throw an error so it is safe
-  (let ((new-command-cache (assoc-delete-all (intern dir)
+  (let ((new-command-cache (assoc-delete-all (intern proj-root)
                                              taskrunner-last-command-cache)))
     ;; Reset the cache with new command added
-    (setq taskrunner-last-command-cache (push (cons (intern dir) command) new-command-cache))
+    (setq taskrunner-last-command-cache (push (list (intern proj-root) dir command) new-command-cache))
     )
   )
 
-(defun taskrunner-delete-tasks-cache ()
+(defun taskrunner-invalidate-tasks-cache ()
   "Delete the entire task cache."
   (setq taskrunner-tasks-cache '()))
 
-(defun taskrunner-delete-last-command-cache ()
+(defun taskrunner-invalidate-last-command-cache ()
   "Delete the entire last command cache."
   (setq taskrunner-last-command-cache '()))
 
-
-;; TODO: Add support for:
-;; CMake
-;; Parsers for them are already created
 
 (defun taskrunner-collect-tasks (dir)
   "Locate and extract all tasks for the project in directory DIR.
@@ -194,12 +190,12 @@ updating the cache."
     ;; Cmake project. If it is an insource build then nothing is done
     ;; and the makefile contents are extracted in the statements below
     ;; otherwise, try to look for a build folder. If none is found
-    (if (member "CMakeLists.txt" work-dir-files)
-        )
+    ;; (if (member "CMakeLists.txt" work-dir-files)
+    ;;     )
 
     ;; Handle general makefiles at project root
     ;; TODO: If the makefile to be parsed is open in a buffer, it will be closed.
-    ;;       Need to find a way to make it stay open if the buffer already exists
+    ;; Need to find a way to make it stay open if the buffer already exists
     ;; TODO: This is a bit repetitive/verbose. Could it be shortened?
     (cond
      ((member "Makefile" work-dir-files)
@@ -277,12 +273,13 @@ containing the new tasks."
     ;; remove old tasks if they exist
     (assoc-delete-all (intern proj-root) taskrunner-tasks-cache)
     ;; Add new tasks
-    (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
+    (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
     ;; Return the tasks
     proj-tasks
     )
   )
 
+;; TODO: Make this use a custom buffer name
 (defun taskrunner-run-task (TASK &optional DIR ASK)
   "Run command TASK in project root or directory DIR if provided.
 If ASK is non-nil then ask the user to supply extra arguments to the task to
@@ -297,8 +294,12 @@ be ran."
       (setq command
             (read-string (concat "Args/Flags to pass to " taskrunner-program ": ")
                          command)))
-
-    (compile (concat taskrunner-program " " command) t)
+    ;; Extra handling for npm/yarn which require the run keyword
+    (if (or (string-equal taskrunner-program "npm")
+            (string-equal taskrunner-program "yarn"))
+        (compile (concat taskrunner-program " " "run" " " command) t)
+      (compile (concat taskrunner-program " " command) t)
+      )
     )
   )
 
