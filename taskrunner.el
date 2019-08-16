@@ -205,8 +205,22 @@ updating the cache."
     ;; Cmake project. If it is an insource build then nothing is done
     ;; and the makefile contents are extracted in the statements below
     ;; otherwise, try to look for a build folder. If none is found
-    ;; (if (member "CMakeLists.txt" work-dir-files)
-    ;;     )
+    (if (member "CMakeLists.txt" work-dir-files)
+        (cond
+         ;; Check for a build folder
+         ((or (member "build" work-dir-files)
+              (member "Build" work-dir-files))
+          )
+         ;; Check if there are NO makefiles in the main folder.
+         ;; If there are not then prompt user to select a build folder for the makefile
+         ;; This build folder is then added to the CMake build folder cache
+         ((not (or (member "Makefile" work-dir-files)
+                   (member "makefile" work-dir-files)
+                   (member "GNUmakefile" work-dir-files)))
+          ;; Prompt and use that
+          )
+         )
+      )
 
     ;; Handle general makefiles at project root
     ;; TODO: If the makefile to be parsed is open in a buffer, it will be closed.
