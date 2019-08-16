@@ -31,6 +31,10 @@
 ;; Install these required packages:
 
 ;; projectile
+;; And one or more of these:
+;; - ivy-taskrunner <- Uses ivy as a frontend
+;; - helm-taskrunner <- Uses helm as a frontend
+;; - ido-taskrunner <- Uses Ido as a frontend
 
 ;; Then put this folder in your load-path, and put this in your init:
 
@@ -88,6 +92,12 @@
 
 ;; Variables:
 
+(defcustom taskrunner-no-previous-command-ran-warning
+  "No previous command has been ran in this project!"
+  "Warning used to indicate that there is no cached previously run command."
+  :group 'taskrunner
+  :type 'string)
+
 (defvar taskrunner-last-command-cache '()
   "A cache used to store the last executed command for each project.")
 
@@ -103,11 +113,11 @@ It is an alist of the form (project-root . list-of-tasks)")
                     (point-at-eol))
   )
 
-(defun taskrunner-get-last-command-ran (&optional root)
+(defun taskrunner-get-last-command-ran (&optional ROOT)
   "Retrieve the last task ran in currently visited project or in directory ROOT.
 If the project does not exist, return nil."
-  (let ((proj-dir (if dir
-                      (intern dir)
+  (let ((proj-dir (if ROOT
+                      (intern ROOT)
                     (intern (projectile-project-root)))))
     (alist-get proj-dir taskrunner-last-command-cache nil)
     )
@@ -297,9 +307,27 @@ be ran."
     ;; Extra handling for npm/yarn which require the run keyword
     (if (or (string-equal taskrunner-program "npm")
             (string-equal taskrunner-program "yarn"))
-        (compile (concat taskrunner-program " " "run" " " command) t)
-      (compile (concat taskrunner-program " " command) t)
+        (progn
+          ;; (intern (projectile-project-root))
+          (taskrunner-set-last-command-ran (projectile-project-root)
+                                           default-directory
+                                           (concat taskrunner-program " " command))
+          (compile (concat taskrunner-program " " "run" " " command) t))
+      (progn
+        (taskrunner-set-last-command-ran  (projectile-project-root)
+                                          default-directory
+                                          (concat taskrunner-program " " command))
+        (compile (concat taskrunner-program " " command) t))
       )
+    )
+  )
+
+(defun taskrunner-rerun-last-task (DIR)
+  "Rerun the last task which was ran for the project in DIR."
+  (let ((last-ran-command (taskrunner-get-last-command-ran DIR)))
+    (if last-ran-command
+        (taskrunner-run-task (cadr last-ran-command) (car last-ran-command))
+      (message taskrunner-no-previous-command-ran-warning))
     )
   )
 
