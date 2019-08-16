@@ -283,19 +283,22 @@ containing the new tasks."
     )
   )
 
-(defun taskrunner-run-task (task &optional dir)
-  "Run command TASK in project root or directory DIR if provided."
-  (let* ((default-directory (if dir
-                                dir
+(defun taskrunner-run-task (TASK &optional DIR ASK)
+  "Run command TASK in project root or directory DIR if provided.
+If ASK is non-nil then ask the user to supply extra arguments to the task to
+be ran."
+  (let* ((default-directory (if DIR
+                                DIR
                               (projectile-project-root)))
-         (taskrunner-program (downcase (car (split-string task " "))))
+         (taskrunner-program (downcase (car (split-string TASK " "))))
+         (command (cadr (split-string TASK " ")))
          )
-    (compile
-     ;; Downcase the first word which indicates the taskrunner and join
-     ;; the rest of the arguments as a single string
-     (concat taskrunner-program " " (mapconcat 'identity
-                                               (cdr (split-string task " ")) " "))
-     t)
+    (when ASK
+      (setq command
+            (read-string (concat "Args/Flags to pass to " taskrunner-program ": ")
+                         command)))
+
+    (compile (concat taskrunner-program " " command) t)
     )
   )
 
