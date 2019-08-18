@@ -32,16 +32,16 @@ systems/frontends listed below.
 - [X] Cask
 - [X] Make
 - [X] CMake
+- [X] stack
+- [X] cabal
 **** User interfaces
 - [X] ivy
 - [X] helm
 - [ ] ido
 *** Planning to add support for
-- [ ] sbt
-- [ ] Ninja
-- [ ] Meson
-- [ ] Buck
 - [ ] Apache maven
-- [ ] stack(?)
-- [ ] cabal(?)
+- [ ] Meson/Ninja
+- [ ] sbt
+- [ ] Buck(?)
+- [ ] Bazel(?)
 - [ ] msbuild(?)
