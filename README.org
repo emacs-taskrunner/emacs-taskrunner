@@ -37,7 +37,7 @@ systems/frontends listed below.
 **** User interfaces
 - [X] ivy
 - [X] helm
-- [ ] ido
+- [X] ido
 *** Planning to add support for
 - [ ] Apache maven
 - [ ] Meson/Ninja
