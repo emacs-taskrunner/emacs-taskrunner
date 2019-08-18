@@ -1,7 +1,17 @@
 ;;; taskrunner-clang.el --- Provide functions to retrieve c/c++ build system targets -*- lexical-binding: t; -*-
 ;; Copyright (C) 2019 Yavor Konstantinov
 
+;;;; Commentary:
+;; Provide function for extracting makefile targets.
+;; Support included for:
+;; - Makefiles(Makefile, makefile, GNUmakefile)
+;; - CMake
+
+;;;; Requirements
+
 (require 'projectile)
+
+;;;; Code:
 
 (defcustom taskrunner-retrieve-all-make-targets t
   "Variable indicates whether or not to always retrieve both phony and non-phony targets."
@@ -16,14 +26,10 @@
 (defconst taskrunner--make-non-phony-target-regexp "^[1-9a-zA-Z_/\\-]+[[:space:]]*:"
   "Regular expression used to locate all Makefile targets which are not PHONY.")
 
-(defconst taskrunner--makefile-filename-regexp ".*[mM]akefile"
-  "Regexp used to locate a makefile ")
-
 (defconst taskrunner--cmake-warning
   "Taskrunner: Detected CMake build system but no build folder or Makefile were found! Please setup
 CMake for either insource or outsource build and then call emacs-taskrunner again!"
-  "A warning string used to indicate that a CMake project was detected but no
-build folder or makefile was found.")
+  "Warning used to indicate that not build folder was found for CMake.")
 
 (defvar taskrunner-cmake-build-cache '()
   "A cache used to store the CMake build folders for retrieval.
@@ -70,8 +76,9 @@ The targets retrieved are every line of the form `.PHONY'."
 )
 
 (defun taskrunner-get-make-targets (ROOT MAKEFILE-NAME ALL)
-  "Retrieve make targets from the currently visted makefile buffer.
-If ALL is non-nil then retrieve all targets possible(phony/non-phony)"
+  "Retrieve all targets from makefile name MAKEFILE-NAME in directory ROOT.
+If ALL is non-nil then retrieve all targets possible(phony/non-phony).
+Otherwise, retrieve only phony targets."
   (let* ((targets '())
          (makefile-path (expand-file-name MAKEFILE-NAME ROOT))
          (buff (get-file-buffer makefile-path)))
@@ -86,13 +93,10 @@ If ALL is non-nil then retrieve all targets possible(phony/non-phony)"
       ;; Non-phony targets are only retrieved when specified
       (when ALL
         (setq targets (append targets (taskrunner--make-get-non-phony-targets))))
-
       (makefile-mode)
-
       ;; Kill the current buffer only if it has not been previously opened by user
       (unless buff
-        (kill-current-buffer))
-      )
+        (kill-current-buffer)))
     ;; Return targets
     targets
     )
@@ -119,14 +123,13 @@ If ALL is non-nil then retrieve all targets possible(phony/non-phony)"
                (member "makefile" work-dir-files)
                (member "GNUmakefile" work-dir-files)))
       ;; Prompt and use that folder instead
-      ;; (setq dir-contents (directory-files
-      ;;                     (ido-read-directory-name "Select CMake build folder: " ROOT nil t)))
+      (setq build-path
+            (ido-read-directory-name "Select CMake build folder: " ROOT nil t))
       )
      )
     )
   )
-
-;; (message "%s" (taskrunner-cmake-find-build-folder "~/School/OldClasses/CMPT454/yase/"))
+)
 
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here
