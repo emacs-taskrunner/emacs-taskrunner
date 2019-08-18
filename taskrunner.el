@@ -106,6 +106,7 @@
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
 
+
 ;; Functions:
 
 (defun taskrunner--narrow-to-line ()
@@ -201,54 +202,21 @@ updating the cache."
     (if (member "stack.yaml" work-dir-files)
         (setq tasks (append tasks taskrunner--stack-targets)))
 
-
     ;; Cmake project. If it is an insource build then nothing is done
     ;; and the makefile contents are extracted in the statements below
     ;; otherwise, try to look for a build folder. If none is found
     (if (member "CMakeLists.txt" work-dir-files)
-        (cond
-         ;; Check for a build folder
-         ((or (member "build" work-dir-files)
-              (member "Build" work-dir-files))
-          )
-         ;; Check if there are NO makefiles in the main folder.
-         ;; If there are not then prompt user to select a build folder for the makefile
-         ;; This build folder is then added to the CMake build folder cache
-         ((not (or (member "Makefile" work-dir-files)
-                   (member "makefile" work-dir-files)
-                   (member "GNUmakefile" work-dir-files)))
-          ;; Prompt and use that
-          )
-         )
-      )
+        (setq tasks (append (taskrunner-cmake-find-build-folder DIR))))
 
-    ;; Handle general makefiles at project root
-    ;; TODO: If the makefile to be parsed is open in a buffer, it will be closed.
-    ;; Need to find a way to make it stay open if the buffer already exists
-    ;; TODO: This is a bit repetitive/verbose. Could it be shortened?
+    ;; There should only be one makefile in the directory only look for one type
+    ;; of name
     (cond
      ((member "Makefile" work-dir-files)
-      (with-temp-buffer
-        (find-file-read-only
-         (concat dir "Makefile"))
-        (setq tasks (append tasks (taskrunner-get-make-targets taskrunner-retrieve-all-make-targets)))
-        )
-      )
+      (setq tasks (append tasks (taskrunner-get-make-targets DIR "Makefile" taskrunner-retrieve-all-make-targets))))
      ((member "makefile" work-dir-files)
-      (with-temp-buffer
-        (find-file-read-only
-         (concat dir "makefile"))
-        (setq tasks (append tasks (taskrunner-get-make-targets taskrunner-retrieve-all-make-targets)))
-        )
-      )
+      (setq tasks (append tasks (taskrunner-get-make-targets DIR "makefile" taskrunner-retrieve-all-make-targets))))
      ((member "GNUmakefile" work-dir-files)
-      (with-temp-buffer
-        (find-file-read-only
-         (concat dir "GNumakefile"))
-        (setq tasks (append tasks (taskrunner-get-make-targets taskrunner-retrieve-all-make-targets)))
-        )
-      )
-     )
+      (setq tasks (append tasks (taskrunner-get-make-targets DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
 
     tasks
     )
@@ -323,11 +291,11 @@ be ran."
       (setq command
             (read-string (concat "Args/Flags to pass to " taskrunner-program ": ")
                          command)))
-    ;; Extra handling for npm/yarn which require the run keyword
+    ;; Extra handling for npm/yarn which require the run keyword to be prepended
+    ;; to the command which is to be ran
     (if (or (string-equal taskrunner-program "npm")
             (string-equal taskrunner-program "yarn"))
         (progn
-          ;; (intern (projectile-project-root))
           (taskrunner-set-last-command-ran (projectile-project-root)
                                            default-directory
                                            (concat taskrunner-program " " command))
