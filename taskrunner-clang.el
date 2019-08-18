@@ -16,13 +16,25 @@
 (defconst taskrunner--make-non-phony-target-regexp "^[1-9a-zA-Z_/\\-]+[[:space:]]*:"
   "Regular expression used to locate all Makefile targets which are not PHONY.")
 
+(defconst taskrunner--makefile-filename-regexp ".*[mM]akefile"
+  "Regexp used to locate a makefile ")
+
 (defconst taskrunner--cmake-warning
   "Taskrunner: Detected CMake build system but no build folder or Makefile were found! Please setup
 CMake for either insource or outsource build and then call emacs-taskrunner again!"
   "A warning string used to indicate that a CMake project was detected but no
 build folder or makefile was found.")
 
+(defvar taskrunner-cmake-build-cache '()
+  "A cache used to store the CMake build folders for retrieval.
+It is an alist of the form (project-root . build-folder)")
+
 ;;;; Functions
+
+(defun taskrunner-invalidate-cmake-cache ()
+  "Delete the entire cmake cache."
+  (setq taskrunner-cmake-build-cache '()))
+
 (defun taskrunner--make-get-non-phony-targets ()
   "Retrieve all non-phony Makefile targets from the current buffer.
 That is, retrieve all targets which do not start with PHONY."
@@ -57,19 +69,64 @@ The targets retrieved are every line of the form `.PHONY'."
   )
 )
 
-(defun taskrunner-get-make-targets (all)
+(defun taskrunner-get-make-targets (ROOT MAKEFILE-NAME ALL)
   "Retrieve make targets from the currently visted makefile buffer.
 If ALL is non-nil then retrieve all targets possible(phony/non-phony)"
-  (let ((targets '()))
-    (setq targets (append targets (taskrunner--make-get-phony-targets)))
-    ;; Non-phony targets are only retrieved when specified
-    (when all
-      (setq targets (append targets (taskrunner--make-get-non-phony-targets))))
-    ;; TODO: This might pose problems if the makefile buffer is already open
-    (kill-current-buffer)
+  (let* ((targets '())
+         (makefile-path (expand-file-name MAKEFILE-NAME ROOT))
+         (buff (get-file-buffer makefile-path)))
+    (with-temp-buffer
+      ;; Check if the buffer might already be open
+      (if buff
+          (set-buffer buff)
+        (find-file makefile-path))
+      (fundamental-mode)
+      ;; Collect phony targets
+      (setq targets (append targets (taskrunner--make-get-phony-targets)))
+      ;; Non-phony targets are only retrieved when specified
+      (when ALL
+        (setq targets (append targets (taskrunner--make-get-non-phony-targets))))
+
+      (makefile-mode)
+
+      ;; Kill the current buffer only if it has not been previously opened by user
+      (unless buff
+        (kill-current-buffer))
+      )
     ;; Return targets
     targets
-    ))
+    )
+  )
+
+(defun taskrunner-cmake-find-build-folder (ROOT)
+  "Attempt to locate the build folder in a CMake project in directory ROOT."
+  (let ((dir-contents (directory-files ROOT))
+        (build-path))
+    (cond
+     ((member "build" dir-contents)
+      (setq build-path (expand-file-name "build" ROOT))
+      (setq dir-contents (directory-files build-path))
+      (when (member "Makefile" dir-contents)
+        (taskrunner-get-make-targets build-path "Makefile" nil)))
+     ((member "Build" dir-contents)
+      (setq build-path (expand-file-name "Build" ROOT))
+      (setq dir-contents (directory-files build-path))
+      (when (member "Makefile" dir-contents)
+        (taskrunner-get-make-targets build-path "Makefile" nil)))
+     ;; Check if there are NO makefiles in the main folder.
+     ;; If there are not then prompt user to select a build folder for the makefile
+     ((not (or (member "Makefile" work-dir-files)
+               (member "makefile" work-dir-files)
+               (member "GNUmakefile" work-dir-files)))
+      ;; Prompt and use that folder instead
+      ;; (setq dir-contents (directory-files
+      ;;                     (ido-read-directory-name "Select CMake build folder: " ROOT nil t)))
+      )
+     )
+    )
+  )
+
+;; (message "%s" (taskrunner-cmake-find-build-folder "~/School/OldClasses/CMPT454/yase/"))
 
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here
