@@ -38,7 +38,7 @@ Included in taskrunner output only when Cargo.toml is present if project root.")
 Included in taskrunner output only when go.mod or go.sum are present in
 project root.")
 
-(defvar taskrunner--cast-targets '("CASK exec"
+(defvar taskrunner--cask-targets '("CASK exec"
                                    "CASK emacs"
                                    "CASK eval"
                                    "CASK help"
@@ -81,7 +81,8 @@ in the project root.")
                                     "STACK dot"
                                     "STACK clean"
                                     "STACK list-dependencies"
-                                    "STACK query"))
+                                    "STACK query")
+  "Static targets for stack.")
 
 (defvar taskrunner--cabal-targets '("CABAL update"
                                     "CABAL install"
@@ -108,6 +109,7 @@ in the project root.")
                                     "CABAL hscolour"
                                     "CABAL copy"
                                     "CABAL register"
-                                    "CABAL reconfigure"))
+                                    "CABAL reconfigure")
+  "Static targets for cabal projects.")
 
 (provide 'taskrunner-static-targets)

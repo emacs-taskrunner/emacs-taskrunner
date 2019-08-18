@@ -197,10 +197,14 @@ updating the cache."
         (setq tasks (append tasks taskrunner--golang-targets)))
 
     (if (member "Cask" work-dir-files)
-        (setq tasks (append tasks taskrunner--cast-targets)))
+        (setq tasks (append tasks taskrunner--cask-targets)))
 
     (if (member "stack.yaml" work-dir-files)
         (setq tasks (append tasks taskrunner--stack-targets)))
+
+    ;; Use built in projectile function for cabal. No need to replicate work
+    (if (projectile-cabal-project-p)
+        (setq tasks (append taskrunner--cabal-targets)))
 
     ;; Cmake project. If it is an insource build then nothing is done
     ;; and the makefile contents are extracted in the statements below
@@ -217,6 +221,7 @@ updating the cache."
       (setq tasks (append tasks (taskrunner-get-make-targets DIR "makefile" taskrunner-retrieve-all-make-targets))))
      ((member "GNUmakefile" work-dir-files)
       (setq tasks (append tasks (taskrunner-get-make-targets DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
+
 
     tasks
     )

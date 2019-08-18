@@ -31,13 +31,13 @@ systems/frontends listed below.
 - [X] go(Golang)
 - [X] Cask
 - [X] Make
+- [X] CMake
 **** User interfaces
 - [X] ivy
 - [X] helm
 - [ ] ido
 *** Planning to add support for
 - [ ] sbt
-- [ ] CMake
 - [ ] Ninja
 - [ ] Meson
 - [ ] Buck
