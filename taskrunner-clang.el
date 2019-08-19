@@ -129,7 +129,6 @@ Otherwise, retrieve only phony targets."
      )
     )
   )
-)
 
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here

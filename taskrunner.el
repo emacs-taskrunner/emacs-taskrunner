@@ -106,6 +106,10 @@
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
 
+(defvar taskrunner--cache-file-read nil
+  "Indicates whether or not the cache file has been read.
+Please do not edit by hand!")
+
 (defconst taskrunner--cache-file-header-warning
   ";;This file is generated automatically. Please do not edit by hand!\n"
   "Warning inserted at the top of the tasks cache file to indicate not to edit it.")
@@ -158,9 +162,9 @@ If the project does not exist, return nil."
           (insert-file-contents cache-file-path)
           (setq tasks (car (read-from-string (buffer-string))))
           ;; Load all the caches with the retrieved info
-          ())
-        )
-      )))
+          (setq taskrunner-tasks-cache (nth 0 tasks))
+          (setq taskrunner-last-command-cache(nth 1 tasks))
+          (setq taskrunner-cmake-build-cache (nth 2 tasks)))))))
 
 (defun taskrunner--write-to-cache-file (TASKS)
   "Write TASKS to the taskrunner tasks cache file."
@@ -261,8 +265,10 @@ If the project does not have any tasks cached then collect all tasks and update
 the cache.  If the tasks exist then simply return them.  The tasks returned are
 in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
   ;; Read the cache file if it exists
-  (unless taskrunner-tasks-cache
-    (taskrunner--read-cache-file))
+  (unless taskrunner--cache-file-read
+    (taskrunner--read-cache-file)
+    (setq taskrunner--cache-file-read t))
+  ;; Retrieve the tasks from cache if possible
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root)))
@@ -355,6 +361,7 @@ be ran."
 
 (defun taskrunner--debug-show-cache-contents ()
   "Debugging function used to show the cache contents in a new temp buffer."
+  (interactive)
   (let ((buff (generate-new-buffer "*taskrunner-debug-cache-contents*")))
     (set-buffer buff)
     (insert "Task cache contents\n")
