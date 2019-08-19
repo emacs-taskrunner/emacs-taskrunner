@@ -395,6 +395,22 @@ be ran."
 
 (defun taskrunner-get-compilation-buffers ()
   "Return a list of the names of all compilation buffers."
+  (let ((taskrunner-buffers '()))
+    (dolist (buff (buffer-list))
+      (if (string-match "\*taskrunner-.+*" (buffer-name buff))
+          (push (buffer-name buff) taskrunner-buffers))
+      )
+    taskrunner-buffers
+    )
+  )
+
+(defun taskrunner-kill-compilation-buffers ()
+  "Kill all taskrunner compilation buffers."
+  (let ((taskrunner-buffers (taskrunner-get-compilation-buffers)))
+    (when taskrunner-buffers
+      (dolist (buff taskrunner-buffers)
+        (kill-buffer buff)))
+    )
   )
 
 ;;;; Footer
