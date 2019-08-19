@@ -106,6 +106,9 @@
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
 
+(defconst taskrunner--cache-file-header-warning
+  ";;This file is generated automatically. Please do not edit by hand!\n"
+  "Warning inserted at the top of the tasks cache file to indicate not to edit it.")
 
 ;; Functions:
 
@@ -137,13 +140,39 @@ If the project does not exist, return nil."
   )
 
 (defun taskrunner-invalidate-tasks-cache ()
-  "Delete the entire task cache."
-  (setq taskrunner-tasks-cache '()))
+  "Invalidate the entire task cache."
+  (setq taskrunner-tasks-cache nil))
 
 (defun taskrunner-invalidate-last-command-cache ()
-  "Delete the entire last command cache."
-  (setq taskrunner-last-command-cache '()))
+  "Invalidate the entire last command cache."
+  (setq taskrunner-last-command-cache nil))
 
+(defun taskrunner--read-cache-file ()
+  "Read the task cache file and initialize the task caches with its contents."
+  (with-temp-buffer
+    (let ((cache-file-path (expand-file-name "taskrunner-tasks.eld" user-emacs-directory))
+          (tasks)
+          )
+      (when (file-exists-p cache-file-path)
+        (with-temp-buffer
+          (insert-file-contents cache-file-path)
+          (setq tasks (car (read-from-string (buffer-string))))
+          ;; Load all the caches with the retrieved info
+          ())
+        )
+      )))
+
+(defun taskrunner--write-to-cache-file (TASKS)
+  "Write TASKS to the taskrunner tasks cache file."
+  (let ((content-string (format "%s%s\n" taskrunner--cache-file-header-warning TASKS))
+        (cache-filepath (expand-file-name "taskrunner-tasks.eld" user-emacs-directory)))
+    (write-region content-string nil cache-filepath)))
+
+(defun taskrunner--save-tasks-to-cache-file ()
+  "Save all tasks in the cache to the cache file in Emacs user directory."
+  (taskrunner--write-to-cache-file (list taskrunner-tasks-cache
+                                         taskrunner-last-command-cache
+                                         taskrunner-cmake-build-cache)))
 
 (defun taskrunner-collect-tasks (DIR)
   "Locate and extract all tasks for the project in directory DIR.
@@ -222,7 +251,6 @@ updating the cache."
      ((member "GNUmakefile" work-dir-files)
       (setq tasks (append tasks (taskrunner-get-make-targets DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
 
-
     tasks
     )
   )
@@ -232,6 +260,9 @@ updating the cache."
 If the project does not have any tasks cached then collect all tasks and update
 the cache.  If the tasks exist then simply return them.  The tasks returned are
 in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
+  ;; Read the cache file if it exists
+  (unless taskrunner-tasks-cache
+    (taskrunner--read-cache-file))
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root)))
@@ -243,7 +274,7 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
           ;; Add the project to the list. Use a symbol for faster comparison
           (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
           )
-      (message "Did not retrieve tasks again" ))
+      (message "Did not retrieve tasks again"))
     ;; Return the tasks
     proj-tasks
     )
@@ -276,8 +307,6 @@ containing the new tasks."
     (assoc-delete-all (intern proj-root) taskrunner-tasks-cache)
     ;; Add new tasks
     (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
-    ;; Return the tasks
-    proj-tasks
     )
   )
 
@@ -322,6 +351,22 @@ be ran."
       (message taskrunner-no-previous-command-ran-warning))
     )
   )
+
+
+(defun taskrunner--debug-show-cache-contents ()
+  "Debugging function used to show the cache contents in a new temp buffer."
+  (let ((buff (generate-new-buffer "*taskrunner-debug-cache-contents*")))
+    (set-buffer buff)
+    (insert "Task cache contents\n")
+    (dolist (el taskrunner-tasks-cache)
+      (insert (format "%s\n" el)))
+    (insert "\nLast command cache contents\n")
+    (dolist (el taskrunner-last-command-cache)
+      (insert (format "%s\n" el)))
+    (insert "\nCMake build cache contents\n")
+    (dolist (el taskrunner-cmake-build-cache)
+      (insert (format "%s\n" el)))
+    (switch-to-buffer buff)))
 
 ;;;; Footer
 
