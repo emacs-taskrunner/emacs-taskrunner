@@ -9,6 +9,7 @@
 
 ;;;; Required
 (require 'json)
+(require 'cl)
 (require 'subr-x)
 
 ;;;; Customizable
@@ -62,7 +63,6 @@ This command returns a list containing the names of the tasks as strings."
          (task-prefix (taskrunner--yarn-or-npm dir))
          (package-tasks '())
          )
-    (message "package-json-scripts")
     (map 'list (lambda (elem)
                  (concat task-prefix " " (symbol-name (car elem))))
          (cdr package-json-scripts))
@@ -72,9 +72,9 @@ This command returns a list containing the names of the tasks as strings."
 (defun taskrunner--js-get-gulp-tasks (dir)
   "Retrieve gulp tasks for the project in directory DIR."
   (let ((default-directory dir))
-    (map 'list (lambda (elem)
-                 (concat "GULP" " " elem))
-         (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n"))
+    (butlast (map 'list (lambda (elem)
+                          (concat "GULP" " " elem))
+                  (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n")))
     )
   )
 
@@ -105,7 +105,7 @@ instead."
       (set-buffer buff)
       (setq tasks (taskrunner--get-grunt-tasks-from-buffer))
       (kill-current-buffer))
-    tasks
+    (butlast tasks)
     )
   )
 
