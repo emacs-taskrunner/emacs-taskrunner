@@ -72,9 +72,9 @@ This command returns a list containing the names of the tasks as strings."
 (defun taskrunner--js-get-gulp-tasks (dir)
   "Retrieve gulp tasks for the project in directory DIR."
   (let ((default-directory dir))
-    (butlast (map 'list (lambda (elem)
-                          (concat "GULP" " " elem))
-                  (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n")))
+    (map 'list (lambda (elem)
+                 (concat "GULP" " " elem))
+         (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n"))
     )
   )
 

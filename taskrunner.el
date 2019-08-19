@@ -89,7 +89,8 @@
 (require 'taskrunner-leiningen)
 
 (defgroup taskrunner nil
-  "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively.")
+  "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively."
+  :group 'extensions)
 
 ;; Variables:
 
@@ -190,37 +191,37 @@ updating the cache."
         (tasks '()))
 
     (if (member "package.json" work-dir-files)
-        (setq tasks (append tasks (taskrunner--js-get-package-tasks dir))))
+        (setq tasks (append tasks (taskrunner--js-get-package-tasks DIR))))
 
     (if (or (member "gulpfile.js" work-dir-files)
             (member "Gulpfile.js" work-dir-files))
-        (setq tasks (append tasks (taskrunner--js-get-gulp-tasks dir))))
+        (setq tasks (append tasks (taskrunner--js-get-gulp-tasks DIR))))
 
     (if (or (member "Gruntfile.js" work-dir-files)
             (member "Gruntfile.coffee" work-dir-files))
-        (setq tasks (append tasks (taskrunner--get-grunt-tasks dir))))
+        (setq tasks (append tasks (taskrunner--get-grunt-tasks DIR))))
 
     (if (or (member "Jakefile.js" work-dir-files)
             (member "Jakefile" work-dir-files)
             (member "Jakefile.coffee" work-dir-files))
-        (setq tasks (append tasks (taskrunner--get-jake-tasks dir))))
+        (setq tasks (append tasks (taskrunner--get-jake-tasks DIR))))
 
     (if (or (member "rakefile" work-dir-files)
             (member "Rakefile" work-dir-files)
             (member "rakefile.rb" work-dir-files)
             (member "Rakefile.rb" work-dir-files))
-        (setq tasks (append tasks (taskrunner--get-rake-tasks dir))))
+        (setq tasks (append tasks (taskrunner--get-rake-tasks DIR))))
 
     (if (or (member "gradlew" work-dir-files)
             (member "gradlew.bat" work-dir-files)
             (member "build.gradle" work-dir-files))
-        (setq tasks (append tasks (taskrunner--get-gradle-tasks dir))))
+        (setq tasks (append tasks (taskrunner--get-gradle-tasks DIR))))
 
     (if (member "mix.exs" work-dir-files)
-        (setq tasks (append tasks (taskrunner--start-elixir-task-process dir))))
+        (setq tasks (append tasks (taskrunner--start-elixir-task-process DIR))))
 
     (if (member "project.clj" work-dir-files)
-        (setq tasks (append tasks (taskrunner--start-leiningen-task-process dir))))
+        (setq tasks (append tasks (taskrunner--start-leiningen-task-process DIR))))
 
     (if (member "Cargo.toml" work-dir-files)
         (setq tasks (append tasks taskrunner--rust-targets)))
@@ -235,7 +236,7 @@ updating the cache."
     (if (member "stack.yaml" work-dir-files)
         (setq tasks (append tasks taskrunner--stack-targets)))
 
-    ;; Use built in projectile function for cabal. No need to replicate work
+    ;; Use built in projectile function for cabal. No need to reinvent the wheel
     (if (projectile-cabal-project-p)
         (setq tasks (append taskrunner--cabal-targets)))
 
@@ -249,11 +250,14 @@ updating the cache."
     ;; of name
     (cond
      ((member "Makefile" work-dir-files)
-      (setq tasks (append tasks (taskrunner-get-make-targets DIR "Makefile" taskrunner-retrieve-all-make-targets))))
+      (setq tasks (append tasks (taskrunner-get-make-targets
+                                 DIR "Makefile" taskrunner-retrieve-all-make-targets))))
      ((member "makefile" work-dir-files)
-      (setq tasks (append tasks (taskrunner-get-make-targets DIR "makefile" taskrunner-retrieve-all-make-targets))))
+      (setq tasks (append tasks (taskrunner-get-make-targets
+                                 DIR "makefile" taskrunner-retrieve-all-make-targets))))
      ((member "GNUmakefile" work-dir-files)
-      (setq tasks (append tasks (taskrunner-get-make-targets DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
+      (setq tasks (append tasks (taskrunner-get-make-targets
+                                 DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
 
     tasks
     )
@@ -316,6 +320,12 @@ containing the new tasks."
     )
   )
 
+(defun taskrunner--generate-buffer-name (TASKRUNNER TASK)
+  "Generate a buffer name for compilation of TASK with TASKRUNNER program."
+  (lambda (mode)
+    (concat "*taskrunner-" TASKRUNNER "-" TASK "*" ))
+  )
+
 ;; TODO: Make this use a custom buffer name
 (defun taskrunner-run-task (TASK &optional DIR ASK)
   "Run command TASK in project root or directory DIR if provided.
@@ -339,12 +349,19 @@ be ran."
           (taskrunner-set-last-command-ran (projectile-project-root)
                                            default-directory
                                            (concat taskrunner-program " " command))
-          (compile (concat taskrunner-program " " "run" " " command) t))
+          (compilation-start (concat taskrunner-program " " "run" " " command)
+                             t
+                             (taskrunner--generate-buffer-name taskrunner-program command)
+                             t))
       (progn
         (taskrunner-set-last-command-ran  (projectile-project-root)
                                           default-directory
                                           (concat taskrunner-program " " command))
-        (compile (concat taskrunner-program " " command) t))
+        (compilation-start (concat taskrunner-program " " command)
+                           t
+                           (taskrunner--generate-buffer-name taskrunner-program command)
+                           t)
+        )
       )
     )
   )
@@ -374,6 +391,11 @@ be ran."
     (dolist (el taskrunner-cmake-build-cache)
       (insert (format "%s\n" el)))
     (switch-to-buffer buff)))
+
+
+(defun taskrunner-get-compilation-buffers ()
+  "Return a list of the names of all compilation buffers."
+  )
 
 ;;;; Footer
 
