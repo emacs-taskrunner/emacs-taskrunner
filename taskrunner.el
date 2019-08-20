@@ -109,11 +109,15 @@ It is an alist of the form (project-root . list-of-tasks)")
 
 (defvar taskrunner--cache-file-read nil
   "Indicates whether or not the cache file has been read.
-Please do not edit by hand!")
+Do not edit unless you want to reread the cache.")
 
 (defconst taskrunner--cache-file-header-warning
   ";;This file is generated automatically. Please do not edit by hand!\n"
   "Warning inserted at the top of the tasks cache file to indicate not to edit it.")
+
+(defconst taskrunner--buffer-name-regexp
+  "\*taskrunner-.+*"
+  "Regexp used to find all buffers running tasks.")
 
 ;; Functions:
 
@@ -268,7 +272,8 @@ updating the cache."
 If the project does not have any tasks cached then collect all tasks and update
 the cache.  If the tasks exist then simply return them.  The tasks returned are
 in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
-  ;; Read the cache file if it exists
+  ;; Read the cache file if it exists.
+  ;; This is done only once at startup
   (unless taskrunner--cache-file-read
     (taskrunner--read-cache-file)
     (setq taskrunner--cache-file-read t))
@@ -283,6 +288,8 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
           (setq proj-tasks (taskrunner-collect-tasks proj-root))
           ;; Add the project to the list. Use a symbol for faster comparison
           (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
+          ;; Write to the cache file when a new set of tasks is found
+          (taskrunner--save-tasks-to-cache-file)
           )
       (message "Did not retrieve tasks again"))
     ;; Return the tasks
@@ -317,6 +324,8 @@ containing the new tasks."
     (assoc-delete-all (intern proj-root) taskrunner-tasks-cache)
     ;; Add new tasks
     (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
+    ;; Write to the cache file when a new set of tasks is found
+    (taskrunner--save-tasks-to-cache-file)
     )
   )
 
@@ -377,7 +386,8 @@ be ran."
 
 
 (defun taskrunner--debug-show-cache-contents ()
-  "Debugging function used to show the cache contents in a new temp buffer."
+  "Debugging function used to show the cache contents in a new temp buffer.
+This is not meant to be used for anything seen by the user."
   (interactive)
   (let ((buff (generate-new-buffer "*taskrunner-debug-cache-contents*")))
     (set-buffer buff)
@@ -397,7 +407,7 @@ be ran."
   "Return a list of the names of all compilation buffers."
   (let ((taskrunner-buffers '()))
     (dolist (buff (buffer-list))
-      (if (string-match "\*taskrunner-.+*" (buffer-name buff))
+      (if (string-match taskrunner--buffer-name-regexp (buffer-name buff))
           (push (buffer-name buff) taskrunner-buffers))
       )
     taskrunner-buffers
