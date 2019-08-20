@@ -20,11 +20,14 @@
   :group 'taskrunner)
 
 ;;;; Constants
-(defconst taskrunner--make-phony-target-regexp "^\.[[:space:]]*PHONY[[:space:]]*:[[:space:]]*"
-  "Regular expression used to locate all PHONY targets in makefile.")
 
-(defconst taskrunner--make-non-phony-target-regexp "^[1-9a-zA-Z_/\\-]+[[:space:]]*:"
+(defconst taskrunner--make-target-regexp
+  "^[1-9a-zA-z/\\-]+[[:space:]]*:"
   "Regular expression used to locate all Makefile targets which are not PHONY.")
+
+(defconst taskrunner--make-nqp-command
+  "make -nqp __BASH_MAKE_COMPLETION__=1 .DEFAULT 2>/dev/null"
+  "Command used to build up the database of targets.")
 
 (defconst taskrunner--cmake-warning
   "Taskrunner: Detected CMake build system but no build folder or Makefile were found! Please setup
@@ -41,63 +44,34 @@ It is an alist of the form (project-root . build-folder)")
   "Delete the entire cmake cache."
   (setq taskrunner-cmake-build-cache '()))
 
-(defun taskrunner--make-get-non-phony-targets ()
-  "Retrieve all non-phony Makefile targets from the current buffer.
-That is, retrieve all targets which do not start with PHONY."
-  (interactive)
-  (fundamental-mode)
-  (goto-line 1)
-  (let ((target-list '()))
-    (while (search-forward-regexp taskrunner--make-non-phony-target-regexp nil t)
-      (taskrunner--narrow-to-line)
-      (push (concat "MAKE" " " (car (split-string (buffer-string) ":"))) target-list)
-      (widen)
-      )
-    target-list
-    )
-  )
-
-(defun taskrunner--make-get-phony-targets ()
-"Retrieve all PHONY Makefile targets from the current buffer.
-The targets retrieved are every line of the form `.PHONY'."
-(interactive)
-(fundamental-mode)
-(let ((target-list '()))
-  (goto-line 1)
-  (text-mode)
-  (while (search-forward-regexp taskrunner--make-phony-target-regexp nil t)
-    (taskrunner--narrow-to-line)
-    (push
-     (concat "MAKE" " " (string-trim (cadr (split-string (buffer-string) ":")))) target-list)
-    (widen)
-    )
-  target-list
-  )
-)
-
-(defun taskrunner-get-make-targets (ROOT MAKEFILE-NAME ALL)
-  "Retrieve all targets from makefile name MAKEFILE-NAME in directory ROOT.
-If ALL is non-nil then retrieve all targets possible(phony/non-phony).
-Otherwise, retrieve only phony targets."
-  (let* ((targets '())
-         (makefile-path (expand-file-name MAKEFILE-NAME ROOT))
-         (buff (get-file-buffer makefile-path)))
+(defun taskrunner-get-all-make-targets (DIR MAKEFILE-NAME)
+  "Find all makefile targets from file called MAKEFILE-NAME located in DIR."
+  (let* ((makefile-path (expand-file-name MAKEFILE-NAME DIR))
+         (buff (get-file-buffer makefile-path))
+         (curr-line)
+         (targets '()))
     (with-temp-buffer
-      ;; Check if the buffer might already be open
       (if buff
           (set-buffer buff)
-        (find-file makefile-path))
-      (fundamental-mode)
-      ;; Collect phony targets
-      (setq targets (append targets (taskrunner--make-get-phony-targets)))
-      ;; Non-phony targets are only retrieved when specified
-      (when ALL
-        (setq targets (append targets (taskrunner--make-get-non-phony-targets))))
-      (makefile-mode)
-      ;; Kill the current buffer only if it has not been previously opened by user
-      (unless buff
-        (kill-current-buffer)))
-    ;; Return targets
+        (insert-file-contents makefile-path))
+      ;; Locate all targets
+      (while (search-forward-regexp
+              taskrunner--make-target-regexp nil t)
+        (taskrunner--narrow-to-line)
+        (setq curr-line (buffer-string))
+        (if (and
+             ;; Do not match anything of the form NAME := MORE_NAMES
+             (not (string-match-p ".:=.*" curr-line))
+             ;; Do not match anything of the form PHONY NAME : MORE_NAMES
+             (not (string-match-p "^PHONY" curr-line))
+             ;; Do not match anything of the form .PHONY NAME : MORE_NAMES
+             (not (string-match-p "^\.PHONY" curr-line))
+             ;; Do not match anything of the form FORCE NAME : MORE_NAMES
+             (not (string-match-p "^FORCE" curr-line)))
+            (push (car (split-string curr-line ":")) targets))
+        (widen)
+        )
+      )
     targets
     )
   )
