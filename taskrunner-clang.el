@@ -14,15 +14,19 @@
 ;;;; Code:
 
 (defcustom taskrunner-retrieve-all-make-targets t
-  "Variable indicates whether or not to always retrieve both phony and non-phony targets."
+  "Variable indicates whether or not to always retrieve targets starting with `_'."
   :type 'symbol
   :options '(t nil)
   :group 'taskrunner)
 
 ;;;; Constants
 
-(defconst taskrunner--make-target-regexp
-  "^[1-9a-zA-z/\\-]+[[:space:]]*:"
+(defconst taskrunner--make-target-regexp-no-hidden
+  "^[1-9a-zA-Z/\\-][1-9a-zA-Z-_/\\]*[[:space:]]*:"
+  "Regular expression used to locate all Makefile targets which are not PHONY.")
+
+(defconst taskrunner--make-target-regexp-hidden
+  "^[1-9a-zA-Z-_/\\]+[[:space:]]*:"
   "Regular expression used to locate all Makefile targets which are not PHONY.")
 
 (defconst taskrunner--make-nqp-command
@@ -44,19 +48,24 @@ It is an alist of the form (project-root . build-folder)")
   "Delete the entire cmake cache."
   (setq taskrunner-cmake-build-cache '()))
 
-(defun taskrunner-get-all-make-targets (DIR MAKEFILE-NAME)
-  "Find all makefile targets from file called MAKEFILE-NAME located in DIR."
+(defun taskrunner-get-make-targets (DIR MAKEFILE-NAME HIDDEN)
+  "Find all makefile targets from file called MAKEFILE-NAME located in DIR.
+If HIDDEN is non-nil then include targets which start with _."
   (let* ((makefile-path (expand-file-name MAKEFILE-NAME DIR))
          (buff (get-file-buffer makefile-path))
          (curr-line)
-         (targets '()))
+         (targets '())
+         (target-regexp (if HIDDEN
+                            taskrunner--make-target-regexp-hidden
+                          taskrunner--make-target-regexp-no-hidden)))
     (with-temp-buffer
+      ;; Check if the current makefile is already opened
       (if buff
           (set-buffer buff)
         (insert-file-contents makefile-path))
       ;; Locate all targets
       (while (search-forward-regexp
-              taskrunner--make-target-regexp nil t)
+              target-regexp nil t)
         (taskrunner--narrow-to-line)
         (setq curr-line (buffer-string))
         (if (and
@@ -85,17 +94,17 @@ It is an alist of the form (project-root . build-folder)")
       (setq build-path (expand-file-name "build" ROOT))
       (setq dir-contents (directory-files build-path))
       (when (member "Makefile" dir-contents)
-        (taskrunner-get-make-targets build-path "Makefile" nil)))
+        (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets)))
      ((member "Build" dir-contents)
       (setq build-path (expand-file-name "Build" ROOT))
       (setq dir-contents (directory-files build-path))
       (when (member "Makefile" dir-contents)
-        (taskrunner-get-make-targets build-path "Makefile" nil)))
+        (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets)))
      ;; Check if there are NO makefiles in the main folder.
      ;; If there are not then prompt user to select a build folder for the makefile
-     ((not (or (member "Makefile" work-dir-files)
-               (member "makefile" work-dir-files)
-               (member "GNUmakefile" work-dir-files)))
+     ((not (or (member "Makefile" dir-contents)
+               (member "makefile" dir-contents)
+               (member "GNUmakefile" dir-contents)))
       ;; Prompt and use that folder instead
       (setq build-path
             (ido-read-directory-name "Select CMake build folder: " ROOT nil t))
