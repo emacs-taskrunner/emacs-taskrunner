@@ -44,6 +44,15 @@ It is an alist of the form (project-root . build-folder)")
 
 ;;;; Functions
 
+(defun taskrunner-add-to-build-cache (PROJ-ROOT BUILD-DIR)
+  "Add BUILD-DIR as the build directory for make in PROJ-ROOT."
+  (assoc-delete-all (intern PROJ-ROOT) taskrunner-cmake-build-cache)
+  (push (list (intern PROJ-ROOT) BUILD-DIR) taskrunner-cmake-build-cache))
+
+(defun taskrunner-get-build-cache (PROJ-ROOT)
+  "Retrieve the build folder for PROJ-ROOT.  Return nil if it does not exist."
+  (alist-get (intern PROJ-ROOT) taskrunner-cmake-build-cache nil))
+
 (defun taskrunner-invalidate-cmake-cache ()
   "Delete the entire cmake cache."
   (setq taskrunner-cmake-build-cache '()))
@@ -99,7 +108,9 @@ If HIDDEN is non-nil then include targets which start with _."
       (setq build-path (expand-file-name "Build" ROOT))
       (setq dir-contents (directory-files build-path))
       (when (member "Makefile" dir-contents)
-        (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets)))
+        (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets)
+        )
+      )
      ;; Check if there are NO makefiles in the main folder.
      ;; If there are not then prompt user to select a build folder for the makefile
      ((not (or (member "Makefile" dir-contents)
@@ -107,9 +118,11 @@ If HIDDEN is non-nil then include targets which start with _."
                (member "GNUmakefile" dir-contents)))
       ;; Prompt and use that folder instead
       (setq build-path
-            (ido-read-directory-name "Select CMake build folder: " ROOT nil t))
+            (read-directory-name "Select CMake build folder: " ROOT nil t))
+      (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets)
       )
      )
+    (taskrunner-add-to-build-cache ROOT build-path)
     )
   )
 
