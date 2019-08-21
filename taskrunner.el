@@ -196,15 +196,15 @@ This function returns an alist of the form:
 
     (cond
      ((member "gulpfile.js" proj-root-files)
-      (push (list "GULP" (expand-file-name "gulpfile.js" DIR)) files))
+      (push (list 'GULP (expand-file-name "gulpfile.js" DIR)) files))
      ((member "Gulpfile.js" proj-root-files)
-      (push (list "GULP" (expand-file-name "Gulpfile.js" DIR)) files)))
+      (push (list 'GULP (expand-file-name "Gulpfile.js" DIR)) files)))
 
     (cond
      ((member "Gruntfile.js" proj-root-files)
-      (push (list "GRUNT" (expand-file-name "Gruntfile.js" DIR)) files))
+      (push (list 'GRUNT (expand-file-name "Gruntfile.js" DIR)) files))
      ((member "Gruntfile.coffee" proj-root-files)
-      (push (list "GRUNT" (expand-file-name "Gruntfile.coffee" DIR)) files)))
+      (push (list 'GRUNT (expand-file-name "Gruntfile.coffee" DIR)) files)))
 
     (cond
      ((member "Jakefile.js" proj-root-files)
@@ -225,30 +225,30 @@ This function returns an alist of the form:
       (push (list "RAKE" (expand-file-name "Rakefile.rb" DIR)) files)))
 
     (if (member "Cask" proj-root-files)
-        (push (list "CASK" (expand-file-name "Cask" DIR)) files))
+        (push (list 'CASK (expand-file-name "Cask" DIR)) files))
 
     (if (member "mix.exs" proj-root-files)
-        (push (list "MIX" (expand-file-name "mix.exs" DIR)) files))
+        (push (list 'MIX (expand-file-name "mix.exs" DIR)) files))
 
     (if (member "project.clj" proj-root-files)
-        (push (list "LEIN" (expand-file-name "project.clj" DIR)) files))
+        (push (list 'LEIN (expand-file-name "project.clj" DIR)) files))
 
     (if (member "Cargo.toml" proj-root-files)
-        (push (list "CARGO" (expand-file-name "Cargo.toml" DIR)) files))
+        (push (list 'CARGO (expand-file-name "Cargo.toml" DIR)) files))
 
     (if (member "stack.yaml" proj-root-files)
-        (push (list "STACK" (expand-file-name "stack.yaml" DIR)) files))
+        (push (list 'STACK (expand-file-name "stack.yaml" DIR)) files))
 
     (if (member "CMakeLists.txt" proj-root-files)
-        (push (list "CMAKE" (expand-file-name "CMakeLists.txt" DIR)) files))
+        (push (list 'CMAKE (expand-file-name "CMakeLists.txt" DIR)) files))
 
     (cond
      ((member "Makefile" proj-root-files)
-      (push (list "MAKE" (expand-file-name "Makefile" DIR)) files))
+      (push (list 'MAKE (expand-file-name "Makefile" DIR)) files))
      ((member "makefile" proj-root-files)
-      (push (list "MAKE" (expand-file-name "makefile" DIR)) files))
+      (push (list 'MAKE (expand-file-name "makefile" DIR)) files))
      ((member "GNUmakefile" proj-root-files)
-      (push (list "MAKE" (expand-file-name "GNUmakefile" DIR)) files)))
+      (push (list 'MAKE (expand-file-name "GNUmakefile" DIR)) files)))
 
     ;; There might be multiple files related to these taskrunner/build systems
 
@@ -263,13 +263,13 @@ This function returns an alist of the form:
                       (string-match-p ".*gradle*" elem)
                       (not (file-directory-p (expand-file-name elem DIR))))
                      (progn
-                       (push (list elem (expand-file-name elem DIR)) temp)
+                       (push (list (intern elem) (expand-file-name elem DIR)) temp)
                        ;; Return the elemnent
                        elem)
                    elem))
          proj-root-files)
     (if (not (null temp))
-        (push (list "GRADLE" temp) files))
+        (push (list 'GRADLE temp) files))
 
     ;; Cabal
     (setq temp '())
@@ -278,30 +278,28 @@ This function returns an alist of the form:
                       (string-match-p ".*cabal*" elem)
                       (not (file-directory-p (expand-file-name elem DIR))))
                      (progn
-                       (push (expand-file-name elem DIR) temp)
+                       (push (list (intern elem) (expand-file-name elem DIR)) temp)
                        ;; Return the elemnent
                        elem)
                    elem))
          proj-root-files)
     (if (not (null temp))
-        (push (list "CABAL" temp) files))
+        (push (list 'CABAL temp) files))
 
     ;; Golang
     (setq temp '())
     (map 'list (lambda (elem)
                  (if (string-match-p ".*go.*" elem)
                      (progn
-                       (push (list elem (expand-file-name elem DIR)) temp)
+                       (push (list (intern elem) (expand-file-name elem DIR)) temp)
                        ;; Return the elemnent
                        elem)
                    elem))
          proj-root-files)
     (if (not (null temp))
-        (push (list "GO" temp) files))
+        (push (list 'GO temp) files))
 
-    files
-    )
-  )
+    files))
 
 (defun taskrunner-collect-tasks (DIR)
   "Locate and extract all tasks for the project in directory DIR.
@@ -450,6 +448,8 @@ containing the new tasks."
 (defun taskrunner--generate-buffer-name (TASKRUNNER TASK)
   "Generate a buffer name for compilation of TASK with TASKRUNNER program."
   (lambda (mode)
+    ;; This is just so the bytecompiler does not complain
+    (intern mode)
     (concat "*taskrunner-" TASKRUNNER "-" TASK "*" ))
   )
 
