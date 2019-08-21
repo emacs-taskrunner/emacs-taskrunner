@@ -1,9 +1,19 @@
-;; Retrieve tasks for mix(Elixir)
+;;; taskrunner-mix.el --- Provide functions to retrieve elixir tasks via mix -*- lexical-binding: t; -*-
+;; Copyright (C) 2019 Yavor Konstantinov
 
+;;;; Commentary:
+;; Provide support for Mix(elixir)
+
+;;;; Code:
+
+;;;; Variables
 
 (defcustom taskrunner-mix-buffer-name "*taskrunner-elixir-tasks*"
   "Name of the buffer temporarily created to be used for retrieving mix tasks."
-  :group 'taskrunner)
+  :group 'taskrunner
+  :type 'string)
+
+;;;; Functions
 
 (defun taskrunner--get-elixir-tasks-from-buffer ()
   "Retrieve all mix tasks from the currently visited buffer."
@@ -36,7 +46,7 @@
     (call-process "mix" nil taskrunner-mix-buffer-name nil "help")
     (with-temp-buffer
       (set-buffer buff)
-      (goto-line 1)
+      (goto-char (point-min))
       ;; Use regexp to find start of region since 'mix help' can sometimes show
       ;; errors in the output and we do not want to match those
       (search-forward-regexp "^mix[[:space:]]+" nil t)
@@ -58,3 +68,4 @@
   )
 
 (provide 'taskrunner-mix)
+;;; taskrunner-mix ends here
