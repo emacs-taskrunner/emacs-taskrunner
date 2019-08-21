@@ -2,12 +2,15 @@
 
 (defcustom taskrunner-leiningen-buffer-name "*taskrunner-leiningen-tasks*"
   "Name of the buffer temporarily created to be used for retrieving leiningen tasks."
-  :group 'taskrunner)
+  :group 'taskrunner
+  :type 'string)
 
 (defcustom taskrunner-leiningen-task-section-header-regexp
   "Several tasks are available:\n"
   "Regexp used to match the header of the task section in the leiningen help
-command. This is used to retrieve all of the tasks.")
+command. This is used to retrieve all of the tasks."
+  :group 'taskrunner
+  :type 'string)
 
 (defun taskrunner--get-leiningen-tasks-from-buffer ()
   "Retrieve all leiningen tasks from the current buffer."
@@ -31,12 +34,10 @@ command. This is used to retrieve all of the tasks.")
     (call-process "lein" nil taskrunner-leiningen-buffer-name nil "-h")
     (with-temp-buffer
       (set-buffer buff)
-      (goto-line 1)
+      (goto-char (point-min))
       (setq lein-tasks (taskrunner--get-leiningen-tasks-from-buffer))
       (kill-current-buffer)
       )
-    ;; Return the tasks explicitly. Cannot do it any other way since the buffer
-    ;; used must be killed before returning from this function
     (butlast lein-tasks)
     )
   )
