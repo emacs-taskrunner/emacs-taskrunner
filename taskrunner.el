@@ -183,6 +183,126 @@ If the project does not exist, return nil."
                                          taskrunner-last-command-cache
                                          taskrunner-cmake-build-cache)))
 
+(defun taskrunner-collect-taskrunner-files (DIR)
+  "Collect the main taskrunner/build system files in DIR.
+This function returns an alist of the form:
+\((SYSTEM_1 LOCATION_1) (SYSTEM_2 LOCATION_2)... (SYSTEM_N LOCATION_N))"
+  (let ((proj-root-files (directory-files DIR))
+        (files '())
+        (temp '()))
+
+    (if (member "package.json" proj-root-files)
+        (push (list "NPM" (expand-file-name "package.json" DIR)) files))
+
+    (cond
+     ((member "gulpfile.js" proj-root-files)
+      (push (list "GULP" (expand-file-name "gulpfile.js" DIR)) files))
+     ((member "Gulpfile.js" proj-root-files)
+      (push (list "GULP" (expand-file-name "Gulpfile.js" DIR)) files)))
+
+    (cond
+     ((member "Gruntfile.js" proj-root-files)
+      (push (list "GRUNT" (expand-file-name "Gruntfile.js" DIR)) files))
+     ((member "Gruntfile.coffee" proj-root-files)
+      (push (list "GRUNT" (expand-file-name "Gruntfile.coffee" DIR)) files)))
+
+    (cond
+     ((member "Jakefile.js" proj-root-files)
+      (push (list "JAKE" (expand-file-name "Jakefile.js" DIR)) files))
+     ((member "Jakefile.coffee" proj-root-files)
+      (push (list "JAKE" (expand-file-name "Jakefile.coffee" DIR)) files))
+     ((member "Jakefile" proj-root-files)
+      (push (list "JAKE" (expand-file-name "Jakefile" DIR)) files)))
+
+    (cond
+     ((member "rakefile" proj-root-files)
+      (push (list "RAKE" (expand-file-name "rakefile" DIR)) files))
+     ((member "Rakefile" proj-root-files)
+      (push (list "RAKE" (expand-file-name "Rakefile" DIR)) files))
+     ((member "rakefile.rb" proj-root-files)
+      (push (list "RAKE" (expand-file-name "rakefile.rb" DIR)) files))
+     ((member "Rakefile.rb" proj-root-files)
+      (push (list "RAKE" (expand-file-name "Rakefile.rb" DIR)) files)))
+
+    (if (member "Cask" proj-root-files)
+        (push (list "CASK" (expand-file-name "Cask" DIR)) files))
+
+    (if (member "mix.exs" proj-root-files)
+        (push (list "MIX" (expand-file-name "mix.exs" DIR)) files))
+
+    (if (member "project.clj" proj-root-files)
+        (push (list "LEIN" (expand-file-name "project.clj" DIR)) files))
+
+    (if (member "Cargo.toml" proj-root-files)
+        (push (list "CARGO" (expand-file-name "Cargo.toml" DIR)) files))
+
+    (if (member "stack.yaml" proj-root-files)
+        (push (list "STACK" (expand-file-name "stack.yaml" DIR)) files))
+
+    (if (member "CMakeLists.txt" proj-root-files)
+        (push (list "CMAKE" (expand-file-name "CMakeLists.txt" DIR)) files))
+
+    (cond
+     ((member "Makefile" proj-root-files)
+      (push (list "MAKE" (expand-file-name "Makefile" DIR)) files))
+     ((member "makefile" proj-root-files)
+      (push (list "MAKE" (expand-file-name "makefile" DIR)) files))
+     ((member "GNUmakefile" proj-root-files)
+      (push (list "MAKE" (expand-file-name "GNUmakefile" DIR)) files)))
+
+    ;; There might be multiple files related to these taskrunner/build systems
+
+    ;; Gradle
+    ;; There are several gradle files and we want to display them all
+    ;; TODO:
+    ;; Would it be too expensive(in terms of time) to list the directory again
+    ;; with regexp?
+    (setq temp '())
+    (map 'list (lambda (elem)
+                 (if (and
+                      (string-match-p ".*gradle*" elem)
+                      (not (file-directory-p (expand-file-name elem DIR))))
+                     (progn
+                       (push (list elem (expand-file-name elem DIR)) temp)
+                       ;; Return the elemnent
+                       elem)
+                   elem))
+         proj-root-files)
+    (if (not (null temp))
+        (push (list "GRADLE" temp) files))
+
+    ;; Cabal
+    (setq temp '())
+    (map 'list (lambda (elem)
+                 (if (and
+                      (string-match-p ".*cabal*" elem)
+                      (not (file-directory-p (expand-file-name elem DIR))))
+                     (progn
+                       (push (expand-file-name elem DIR) temp)
+                       ;; Return the elemnent
+                       elem)
+                   elem))
+         proj-root-files)
+    (if (not (null temp))
+        (push (list "CABAL" temp) files))
+
+    ;; Golang
+    (setq temp '())
+    (map 'list (lambda (elem)
+                 (if (string-match-p ".*go.*" elem)
+                     (progn
+                       (push (list elem (expand-file-name elem DIR)) temp)
+                       ;; Return the elemnent
+                       elem)
+                   elem))
+         proj-root-files)
+    (if (not (null temp))
+        (push (list "GO" temp) files))
+
+    files
+    )
+  )
+
 (defun taskrunner-collect-tasks (DIR)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
@@ -262,7 +382,6 @@ updating the cache."
      ((member "GNUmakefile" work-dir-files)
       (setq tasks (append tasks (taskrunner-get-make-targets
                                  DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
-
     tasks
     )
   )
@@ -290,8 +409,7 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
           (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
           ;; Write to the cache file when a new set of tasks is found
           (taskrunner--save-tasks-to-cache-file)
-          )
-      (message "Did not retrieve tasks again"))
+          ))
     ;; Return the tasks
     proj-tasks
     )
