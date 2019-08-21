@@ -1,8 +1,17 @@
-;; Variables which contain constant targets present in build systems.
+;;; taskrunner-static-targets.el --- Provide functions to retrieve build system targets which do not chagne -*- lexical-binding: t; -*-
+;; Copyright (C) 2019 Yavor Konstantinov
+
+;;;; Commentary:
 ;; Support for:
 ;; - Rust/cargo
 ;; - Golang/go
 ;; - Emacs/Cask
+;; - Haskell/Cabal
+;; - Haskell/Stack
+
+;;;; Code:
+
+;;;; Variables
 
 (defvar taskrunner--rust-targets '("RUST build"
                                    "RUST check"
@@ -82,7 +91,7 @@ in the project root.")
                                     "STACK clean"
                                     "STACK list-dependencies"
                                     "STACK query")
-  "Static targets for stack.")
+  "Static targets for stack based projects.")
 
 (defvar taskrunner--cabal-targets '("CABAL update"
                                     "CABAL install"
@@ -110,6 +119,7 @@ in the project root.")
                                     "CABAL copy"
                                     "CABAL register"
                                     "CABAL reconfigure")
-  "Static targets for cabal projects.")
+  "Static targets for cabal based projects.")
 
 (provide 'taskrunner-static-targets)
+;;; taskrunner-static-targets.el ends here
