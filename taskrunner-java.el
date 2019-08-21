@@ -1,5 +1,15 @@
-;; Functions/Variables/Warnings related to extracting the tasks from gradle
-(require 'projectile)
+;;; taskrunner-java.el --- Provide functions to retrieve java build system targets -*- lexical-binding: t; -*-
+;; Copyright (C) 2019 Yavor Konstantinov
+
+;;;; Commentary:
+;; Provide function for extracting java build system targets.
+;; Support included for:
+;; - Ant
+;; - Gradle
+
+;;;; Code:
+
+;;;; Variables
 
 (defcustom taskrunner-gradle-heading-regexps
   '("Build tasks\n-+\n"
@@ -25,6 +35,8 @@
   :type 'string
   :group 'taskrunner)
 
+;;;; Functions
+
 ;; Each block contains several tasks which can be executed.
 ;; The block has the following form:
 ;; TASK-HEADING
@@ -40,28 +52,26 @@
 (defun taskrunner--retrieve-gradle-heading-tasks (heading)
   "Retrieve the gradle tasks below the heading HEADING and return as list."
   (widen)
-  (goto-line 1)
+  (goto-char (point-min))
   (let ((beg (re-search-forward heading nil t)))
-    (when beg 
-      (narrow-to-region beg 
-                        (progn 
+    (when beg
+      (narrow-to-region beg
+                        (progn
                           (re-search-forward "^$" nil t)
                           ;; Go up a line so the empty line at the end of the block
                           ;; is not included in the output
-                          (previous-line 1)
+                          (forward-line -1)
                           (line-end-position)))
 
       (map 'list (lambda (elem)
                    (concat "GRADLE" " " (car (split-string elem " "))))
-           (split-string (buffer-string) "\n"))
-      )))
+           (split-string (buffer-string) "\n")))))
 
 (defun taskrunner--get-gradle-tasks (dir)
   "Retrieve the gradle tasks for the project in directory DIR."
   (let ((default-directory dir)
         (buff (get-buffer-create taskrunner-gradle-tasks-buffer-name))
-        (gradle-tasks '())
-        )
+        (gradle-tasks '()))
     (call-process "gradle"  nil taskrunner-gradle-tasks-buffer-name  nil "tasks")
     (with-temp-buffer
       (set-buffer buff)
@@ -69,13 +79,10 @@
         (let ((tasks-retrieved (taskrunner--retrieve-gradle-heading-tasks curr-regex)))
           (when tasks-retrieved
             (setq gradle-tasks (append gradle-tasks tasks-retrieved))
-            )
-          ))
+            )))
       (kill-buffer buff))
     ;; Return the tasks acquired
-    gradle-tasks
-    )
-  )
+    gradle-tasks))
 
 ;; In general, the output of 'ant -verbose -p' looks like this:
 ;; some-java-logging-commands...
@@ -95,16 +102,16 @@
 (defun taskrunner--retrieve-ant-tasks-from-buffer ()
   "Retrieve all and tasks from the current buffer.
 This function is meant to be used with the output of `ant -verbose -p'.
-If you need to retrieve tasks from ant, use the function 
+If you need to retrieve tasks from ant, use the function
 `taskrunner--get-ant-tasks' instead of this."
-  (goto-line 1)
+  (goto-char (point-min))
   (let ((beg (search-forward-regexp "Main targets:\n\n" nil t))
         (ant-tasks '()))
     (when beg
       (narrow-to-region (point-at-bol)
                         (progn
                           (search-forward-regexp "Other targets:")
-                          (previous-line 1)
+                          (forward-line -1)
                           (point-at-eol)))
       (map 'list (lambda (elem)
                    (if (not (string-equal elem ""))
@@ -114,7 +121,7 @@ If you need to retrieve tasks from ant, use the function
       (widen))
 
     ;; Look for the 'Other targets' section
-    (goto-line 1)
+    (goto-char (point-min))
     (setq beg (search-forward-regexp "Other targets:\n\n" nil t))
     ;; If the section exists, retrieve the tasks in it.
     (when beg
@@ -125,7 +132,7 @@ If you need to retrieve tasks from ant, use the function
                         ;; Otherwise, the last line is a task
                         (if (search-forward-regexp "Default target:" nil t)
                             (progn
-                              (previous-line 1)
+                              (forward-line -1)
                               (point-at-eol))
                           (progn
                             (goto-char (point-max))
@@ -138,9 +145,7 @@ If you need to retrieve tasks from ant, use the function
     (kill-current-buffer)
 
     ;; Return the tasks after killing buffer
-    ant-tasks
-    )
-  )
+    ant-tasks))
 
 (defun taskrunner--get-ant-tasks (dir)
   "Retrieve all ant tasks from the project in directory DIR."
@@ -149,9 +154,7 @@ If you need to retrieve tasks from ant, use the function
     (call-process "ant"  nil taskrunner-ant-tasks-buffer-name  nil "-verbose" "-p")
     (with-temp-buffer
       (set-buffer buff)
-      (taskrunner--retrieve-ant-tasks-from-buffer)
-      )
-    )
-  )
+      (taskrunner--retrieve-ant-tasks-from-buffer))))
 
 (provide 'taskrunner-java)
+;;; taskrunner-java.el ends here
