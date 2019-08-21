@@ -90,25 +90,28 @@ If HIDDEN is non-nil then include targets which start with _."
         (widen)
         )
       )
-    targets
+    (map 'list (lambda (elem)
+                 (concat "MAKE" " " elem)) targets)
     )
   )
 
 (defun taskrunner-cmake-find-build-folder (ROOT)
   "Attempt to locate the build folder in a CMake project in directory ROOT."
   (let ((dir-contents (directory-files ROOT))
-        (build-path))
+        (build-path)
+        (targets))
     (cond
      ((member "build" dir-contents)
       (setq build-path (expand-file-name "build" ROOT))
       (setq dir-contents (directory-files build-path))
       (when (member "Makefile" dir-contents)
-        (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets)))
+        (setq targets (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets))))
+
      ((member "Build" dir-contents)
       (setq build-path (expand-file-name "Build" ROOT))
       (setq dir-contents (directory-files build-path))
       (when (member "Makefile" dir-contents)
-        (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets)
+        (setq targets (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets))
         )
       )
      ;; Check if there are NO makefiles in the main folder.
@@ -119,10 +122,11 @@ If HIDDEN is non-nil then include targets which start with _."
       ;; Prompt and use that folder instead
       (setq build-path
             (read-directory-name "Select CMake build folder: " ROOT nil t))
-      (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets)
+      (setq targets (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets))
       )
      )
     (taskrunner-add-to-build-cache ROOT build-path)
+    targets
     )
   )
 

@@ -251,7 +251,7 @@ updating the cache."
         (setq tasks (append (taskrunner-cmake-find-build-folder DIR))))
 
     ;; There should only be one makefile in the directory only look for one type
-    ;; of name
+    ;; of name.
     (cond
      ((member "Makefile" work-dir-files)
       (setq tasks (append tasks (taskrunner-get-make-targets
