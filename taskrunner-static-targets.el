@@ -5,7 +5,7 @@
 ;; Support for:
 ;; - Rust/cargo
 ;; - Golang/go
-;; - Emacs/Cask
+;; - Elisp/Cask
 ;; - Haskell/Cabal
 ;; - Haskell/Stack
 
@@ -91,7 +91,8 @@ in the project root.")
                                     "STACK clean"
                                     "STACK list-dependencies"
                                     "STACK query")
-  "Static targets for stack based projects.")
+  "Static targets for stack based projects.
+They are included when stack.yaml is present in the project root.")
 
 (defvar taskrunner--cabal-targets '("CABAL update"
                                     "CABAL install"
@@ -119,7 +120,8 @@ in the project root.")
                                     "CABAL copy"
                                     "CABAL register"
                                     "CABAL reconfigure")
-  "Static targets for cabal based projects.")
+  "Static targets for cabal based projects.
+They are used when any *.cabal files are present in project root.")
 
 (provide 'taskrunner-static-targets)
 ;;; taskrunner-static-targets.el ends here
