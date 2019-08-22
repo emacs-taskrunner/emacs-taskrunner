@@ -242,6 +242,9 @@ to a single file."
     (if (member "CMakeLists.txt" proj-root-files)
         (push (list 'CMAKE (expand-file-name "CMakeLists.txt" DIR)) files))
 
+    (if (member "build.xml" proj-root-files)
+        (push (list 'ANT (expand-file-name "build.xml" DIR)) files))
+
     (cond
      ((member "Makefile" proj-root-files)
       (push (list 'MAKE (expand-file-name "Makefile" DIR)) files))
@@ -298,37 +301,40 @@ updating the cache."
         (tasks '()))
 
     (if (member "package.json" work-dir-files)
-        (setq tasks (append tasks (taskrunner--js-get-package-tasks DIR))))
+        (setq tasks (append tasks (taskrunner-get-package-json-tasks DIR))))
 
     (if (or (member "gulpfile.js" work-dir-files)
             (member "Gulpfile.js" work-dir-files))
-        (setq tasks (append tasks (taskrunner--js-get-gulp-tasks DIR))))
+        (setq tasks (append tasks (taskrunner-get-gulp-tasks DIR))))
 
     (if (or (member "Gruntfile.js" work-dir-files)
             (member "Gruntfile.coffee" work-dir-files))
-        (setq tasks (append tasks (taskrunner--get-grunt-tasks DIR))))
+        (setq tasks (append tasks (taskrunner-get-grunt-tasks DIR))))
 
     (if (or (member "Jakefile.js" work-dir-files)
             (member "Jakefile" work-dir-files)
             (member "Jakefile.coffee" work-dir-files))
-        (setq tasks (append tasks (taskrunner--get-jake-tasks DIR))))
+        (setq tasks (append tasks (taskrunner-get-jake-tasks DIR))))
 
     (if (or (member "rakefile" work-dir-files)
             (member "Rakefile" work-dir-files)
             (member "rakefile.rb" work-dir-files)
             (member "Rakefile.rb" work-dir-files))
-        (setq tasks (append tasks (taskrunner--get-rake-tasks DIR))))
+        (setq tasks (append tasks (taskrunner-get-rake-tasks DIR))))
 
     (if (or (member "gradlew" work-dir-files)
             (member "gradlew.bat" work-dir-files)
             (member "build.gradle" work-dir-files))
-        (setq tasks (append tasks (taskrunner--get-gradle-tasks DIR))))
+        (setq tasks (append tasks (taskrunner-get-gradle-tasks DIR))))
+
+    (if (member "build.xml" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-ant-tasks DIR))))
 
     (if (member "mix.exs" work-dir-files)
-        (setq tasks (append tasks (taskrunner--start-elixir-task-process DIR))))
+        (setq tasks (append tasks (taskrunner-get-mix-tasks DIR))))
 
     (if (member "project.clj" work-dir-files)
-        (setq tasks (append tasks (taskrunner--start-leiningen-task-process DIR))))
+        (setq tasks (append tasks (taskrunner-get-leiningen-tasks DIR))))
 
     ;; Cmake project. If it is an insource build then nothing is done and the
     ;; makefile contents are extracted in the code below.
