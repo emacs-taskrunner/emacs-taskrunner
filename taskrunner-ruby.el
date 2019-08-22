@@ -6,24 +6,19 @@
 
 ;;;; Code:
 
-;;;; Requirements
-
-(require 'projectile)
-
 ;;;; Variables
 (defconst taskrunner--rake-tasks-command '("rake" "-AT")
   "Command used to retrieve the tasks from rake.")
 
 ;;;; Functions
-(defun taskrunner--get-rake-tasks (DIR)
-  "Retrieve tasks from the rake build system for the project in directory DIR."
+(defun taskrunner-get-rake-tasks (DIR)
+  "Retrieve the rake tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"RAKE TASK1\" \"RAKE TASK2\"...)"
   (let ((default-directory DIR))
     (map 'list (lambda (elem)
                  (concat "RAKE" " " (cadr (split-string elem " "))))
-         (split-string (shell-command-to-string taskrunner--rake-tasks-command) "\n"))
-    )
-  )
+         (split-string (shell-command-to-string taskrunner--rake-tasks-command) "\n"))))
 
 (provide 'taskrunner-ruby)
 ;;; taskrunner-ruby.el ends here
-
