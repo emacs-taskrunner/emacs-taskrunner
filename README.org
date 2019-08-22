@@ -11,7 +11,8 @@ A larger goal to be looked at down the line would be to use async
 processes/threads so emacs does not freeze while the processes are being
 retrieved. For the time being, the main focus is to find a way to reliably parse
 and return all tasks from a project directory and execute them.
-
+* API
+TODO: Finish this
 * Project Status
 Currently, this project can is stable and can be used for the following
 systems/frontends listed below.
@@ -40,6 +41,13 @@ systems/frontends listed below.
 - [X] ido
 *** Planning to add support for
 - [ ] Apache maven
+- [ ] tasks.json(VSCode)
+- [ ] [[https://github.com/go-task/task][go-task]] 
+- [ ] [[https://github.com/welaika/wordmove][wordmove?]] 
+- [ ][[https://github.com/jakedeichert/mask][ mask]] 
+- [ ] [[https://github.com/pydoit/doit][doit]] 
+- [ ] [[https://github.com/sagiegurari/cargo-make][cargo-make?]] 
+- [ ] [[https://github.com/pantsbuild/pants][pants]] 
 - [ ] Meson/Ninja
 - [ ] sbt
 - [ ] Buck(?)
