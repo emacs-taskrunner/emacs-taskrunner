@@ -124,18 +124,16 @@ Do not edit unless you want to reread the cache.")
 (defun taskrunner--narrow-to-line ()
   "Narrow to the line entire line that the point lies on."
   (narrow-to-region (point-at-bol)
-                    (point-at-eol))
-  )
+                    (point-at-eol)))
 
-(defun taskrunner-get-last-command-ran (&optional ROOT)
-  "Retrieve the last task ran in currently visited project or in directory ROOT.
-If the project does not exist, return nil."
-  (let ((proj-dir (if ROOT
-                      (intern ROOT)
+(defun taskrunner-get-last-command-ran (&optional DIR)
+  "Retrieve the last command ran for the project.
+If DIR is non-nil then return the command for for that directory.  Otherwise,
+use the project root for the currently visited buffer."
+  (let ((proj-dir (if DIR
+                      (intern DIR)
                     (intern (projectile-project-root)))))
-    (alist-get proj-dir taskrunner-last-command-cache nil)
-    )
-  )
+    (alist-get proj-dir taskrunner-last-command-cache nil)))
 
 (defun taskrunner-set-last-command-ran (ROOT DIR COMMAND)
   "Set the COMMAND ran in DIR to be the last command ran for project in ROOT."
@@ -144,9 +142,7 @@ If the project does not exist, return nil."
   (let ((new-command-cache (assoc-delete-all (intern ROOT)
                                              taskrunner-last-command-cache)))
     ;; Reset the cache with new command added
-    (setq taskrunner-last-command-cache (push (list (intern ROOT) DIR COMMAND) new-command-cache))
-    )
-  )
+    (setq taskrunner-last-command-cache (push (list (intern ROOT) DIR COMMAND) new-command-cache))))
 
 (defun taskrunner-invalidate-tasks-cache ()
   "Invalidate the entire task cache."
@@ -185,8 +181,12 @@ If the project does not exist, return nil."
 
 (defun taskrunner-collect-taskrunner-files (DIR)
   "Collect the main taskrunner/build system files in DIR.
+
 This function returns an alist of the form:
-\((SYSTEM_1 LOCATION_1) (SYSTEM_2 LOCATION_2)... (SYSTEM_N LOCATION_N))"
+\((SYSTEM_1 LOCATION_1) (SYSTEM_2 LOCATION_2)... (SYSTEM_N LOCATION_N))
+where LOCATION_1, LOCATION_2...LOCATION_N can either be an alist of the form:
+\(FILE_NAME FILE_PATH) or it can be a single string containing the file path
+to a single file."
   (let ((proj-root-files (directory-files DIR))
         (files '())
         (temp '()))
@@ -259,14 +259,9 @@ This function returns an alist of the form:
     ;; with regexp?
     (setq temp '())
     (map 'list (lambda (elem)
-                 (if (and
-                      (string-match-p ".*gradle*" elem)
-                      (not (file-directory-p (expand-file-name elem DIR))))
-                     (progn
-                       (push (list (intern elem) (expand-file-name elem DIR)) temp)
-                       ;; Return the elemnent
-                       elem)
-                   elem))
+                 (if (and (string-match-p ".*gradle*" elem)
+                          (not (file-directory-p (expand-file-name elem DIR))))
+                     (push (list (intern elem) (expand-file-name elem DIR)) temp)))
          proj-root-files)
     (if (not (null temp))
         (push (list 'GRADLE temp) files))
@@ -274,14 +269,9 @@ This function returns an alist of the form:
     ;; Cabal
     (setq temp '())
     (map 'list (lambda (elem)
-                 (if (and
-                      (string-match-p ".*cabal*" elem)
-                      (not (file-directory-p (expand-file-name elem DIR))))
-                     (progn
-                       (push (list (intern elem) (expand-file-name elem DIR)) temp)
-                       ;; Return the elemnent
-                       elem)
-                   elem))
+                 (if (and (string-match-p ".*cabal*" elem)
+                          (not (file-directory-p (expand-file-name elem DIR))))
+                     (push (list (intern elem) (expand-file-name elem DIR)) temp)))
          proj-root-files)
     (if (not (null temp))
         (push (list 'CABAL temp) files))
@@ -290,11 +280,7 @@ This function returns an alist of the form:
     (setq temp '())
     (map 'list (lambda (elem)
                  (if (string-match-p ".*go.*" elem)
-                     (progn
-                       (push (list (intern elem) (expand-file-name elem DIR)) temp)
-                       ;; Return the elemnent
-                       elem)
-                   elem))
+                     (push (list (intern elem) (expand-file-name elem DIR)) temp)))
          proj-root-files)
     (if (not (null temp))
         (push (list 'GO temp) files))
@@ -362,9 +348,9 @@ updating the cache."
     (if (projectile-cabal-project-p)
         (setq tasks (append taskrunner--cabal-targets)))
 
-    ;; Cmake project. If it is an insource build then nothing is done
-    ;; and the makefile contents are extracted in the statements below
-    ;; otherwise, try to look for a build folder. If none is found
+    ;; Cmake project. If it is an insource build then nothing is done and the
+    ;; makefile contents are extracted in the code below otherwise, try to look
+    ;; for a build folder. If none is found then query the user to select one.
     (if (member "CMakeLists.txt" work-dir-files)
         (setq tasks (append (taskrunner-cmake-find-build-folder DIR))))
 
@@ -380,9 +366,7 @@ updating the cache."
      ((member "GNUmakefile" work-dir-files)
       (setq tasks (append tasks (taskrunner-get-make-targets
                                  DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
-    tasks
-    )
-  )
+    tasks))
 
 (defun taskrunner-get-tasks-from-cache (&optional DIR)
   "Retrieve the cached tasks from the directory DIR or the current project.
@@ -394,6 +378,7 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
   (unless taskrunner--cache-file-read
     (taskrunner--read-cache-file)
     (setq taskrunner--cache-file-read t))
+
   ;; Retrieve the tasks from cache if possible
   (let* ((proj-root (if DIR
                         DIR
@@ -405,13 +390,11 @@ in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME."
           (setq proj-tasks (taskrunner-collect-tasks proj-root))
           ;; Add the project to the list. Use a symbol for faster comparison
           (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
-          ;; Write to the cache file when a new set of tasks is found
-          (taskrunner--save-tasks-to-cache-file)
-          ))
+          ;; Write to the cache file when a new set of tasks is found.
+          ;; This will overwrite anything
+          (taskrunner--save-tasks-to-cache-file)))
     ;; Return the tasks
-    proj-tasks
-    )
-  )
+    proj-tasks))
 
 (defun taskrunner-project-cached-p (&optional DIR)
   "Check if either the current project or the one in directory DIR are cached.
@@ -419,13 +402,9 @@ Return t or nil."
   (let ((proj-root (if DIR
                        (intern DIR)
                      (intern (projectile-project-root)))))
-    ;; Cannot simply return the cache contents to the caller so use this to
-    ;; make sure that either t or nil is returned.
     (if (assoc proj-root taskrunner-tasks-cache)
         t
-      nil)
-    )
-  )
+      nil)))
 
 (defun taskrunner-refresh-cache (&optional DIR)
   "Retrieve all tasks for project in DIR or the current project and set cache.
@@ -441,19 +420,16 @@ containing the new tasks."
     ;; Add new tasks
     (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
     ;; Write to the cache file when a new set of tasks is found
-    (taskrunner--save-tasks-to-cache-file)
-    )
-  )
+    (taskrunner--save-tasks-to-cache-file)))
 
 (defun taskrunner--generate-buffer-name (TASKRUNNER TASK)
   "Generate a buffer name for compilation of TASK with TASKRUNNER program."
   (lambda (mode)
-    ;; This is just so the bytecompiler does not complain
+    ;; This is just so the bytecompiler does not complain.
+    ;; The mode is useless
     (intern mode)
-    (concat "*taskrunner-" TASKRUNNER "-" TASK "*" ))
-  )
+    (concat "*taskrunner-" TASKRUNNER "-" TASK "*" )))
 
-;; TODO: Make this use a custom buffer name
 (defun taskrunner-run-task (TASK &optional DIR ASK)
   "Run command TASK in project root or directory DIR if provided.
 If ASK is non-nil then ask the user to supply extra arguments to the task to
@@ -498,9 +474,7 @@ be ran."
   (let ((last-ran-command (taskrunner-get-last-command-ran DIR)))
     (if last-ran-command
         (taskrunner-run-task (cadr last-ran-command) (car last-ran-command))
-      (message taskrunner-no-previous-command-ran-warning))
-    )
-  )
+      (message taskrunner-no-previous-command-ran-warning))))
 
 
 (defun taskrunner--debug-show-cache-contents ()
@@ -522,24 +496,19 @@ This is not meant to be used for anything seen by the user."
 
 
 (defun taskrunner-get-compilation-buffers ()
-  "Return a list of the names of all compilation buffers."
+  "Return a list of the names of all taskrunner compilation buffers."
   (let ((taskrunner-buffers '()))
     (dolist (buff (buffer-list))
       (if (string-match taskrunner--buffer-name-regexp (buffer-name buff))
-          (push (buffer-name buff) taskrunner-buffers))
-      )
-    taskrunner-buffers
-    )
-  )
+          (push (buffer-name buff) taskrunner-buffers)))
+    taskrunner-buffers))
 
 (defun taskrunner-kill-compilation-buffers ()
   "Kill all taskrunner compilation buffers."
   (let ((taskrunner-buffers (taskrunner-get-compilation-buffers)))
     (when taskrunner-buffers
       (dolist (buff taskrunner-buffers)
-        (kill-buffer buff)))
-    )
-  )
+        (kill-buffer buff)))))
 
 ;;;; Footer
 
