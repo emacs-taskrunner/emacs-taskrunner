@@ -37,9 +37,11 @@
   )
 
 
-(defun taskrunner--start-elixir-task-process (dir)
-  "Start the mix help process for project in DIR and retrieve mix tasks."
-  (let ((default-directory dir)
+(defun taskrunner-get-mix-tasks (DIR)
+  "Retrieve the mix tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"MIX TASK1\" \"MIX TASK2\"...)"
+  (let ((default-directory DIR)
         (buff (get-buffer-create taskrunner-mix-buffer-name))
         (elixir-tasks) ;; Store the elixir tasks retrieved
         )
@@ -59,13 +61,10 @@
                           (beginning-of-line)
                           (point)))
       (setq elixir-tasks (taskrunner--get-elixir-tasks-from-buffer))
-      (kill-current-buffer)
-      )
+      (kill-current-buffer))
     ;; Return the tasks explicitly. Cannot do it any other way since the buffer
     ;; used must be killed before returning from this function
-    elixir-tasks
-    )
-  )
+    elixir-tasks))
 
 (provide 'taskrunner-mix)
 ;;; taskrunner-mix ends here
