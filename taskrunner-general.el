@@ -11,14 +11,25 @@
 (require 'projectile)
 
 ;;;; Variables
-(defcustom go-task-bin-path "~/go/bin/"
-  "Path used to locate the `task' golang binary."
+(defcustom taskrunner-go-task-bin-path "~/go/bin/"
+  "Path used to locate the `task' taskrunner binary."
   :group 'taskrunner
   :type 'string)
 
-(defcustom go-task-buffer-name "*taskrunner-go-task*"
+(defcustom taskrunner-mage-bin-path "~/go/bin/"
+  "Path used to locate the `mage' taskrunner binary."
+  :group 'taskrunner
+  :type 'string)
+
+(defcustom taskrunner-go-task-buffer-name "*taskrunner-go-task*"
   "Temporary buffer name used to collect all targets for go task.
 The process output of the command `task -l' is loaded in here."
+  :group 'taskrunner
+  :type 'string)
+
+(defcustom taskrunner-mage-task-buffer-name "*taskrunner-mage*"
+  "Temporary buffer name used to collect all targets for mage.
+The process output of the command `mage -l' is loaded in here."
   :group 'taskrunner
   :type 'string)
 
@@ -46,11 +57,39 @@ The tasks are returned in the form:
 This function returns a list of the form:
 \(\"TASK TASK1\" \"TASK TASK2\"...)"
   (let ((default-directory DIR)
-        (exec-path (cons go-task-bin-path exec-path)))
-    (call-process "task" nil go-task-buffer-name nil "-l")
+        (exec-path (cons taskrunner-go-task-bin-path exec-path)))
+    (call-process "task" nil taskrunner-go-task-buffer-name nil "-l")
     (with-temp-buffer
-      (set-buffer go-task-buffer-name)
+      (set-buffer taskrunner-go-task-buffer-name)
       (taskrunner--get-go-tasks-from-buffer))))
 
-(provide taskrunner-general)
+(defun taskrunner--get-mage-tasks-from-buffer ()
+  "Retrieve all mage tasks from the currently visited buffer."
+  (let ((targets '())
+        (beg nil))
+    (goto-char (point-min))
+    (setq beg (search-forward-regexp "Targets:\n" nil t))
+    (when beg
+      (narrow-to-region (point-at-bol) (point-max))
+      (dolist (elem (split-string (buffer-string) "\n"))
+        (push (car (split-string elem " " t)) targets)
+        (if (null (car targets))
+            (pop targets))))
+    (kill-current-buffer)
+    (map 'list (lambda (elem)
+                 (concat "MAGE" " " elem))
+         targets)))
+
+(defun taskrunner-get-mage-tasks (DIR)
+  "Retrieve the mage tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"MAGE TASK1\" \"MAGE TASK2\"...)"
+  (let ((default-directory DIR)
+        (exec-path (cons taskrunner-mage-bin-path exec-path)))
+    (call-process "mage" nil taskrunner-mage-task-buffer-name nil "-l")
+    (with-temp-buffer
+      (set-buffer taskrunner-mage-task-buffer-name)
+      (taskrunner--get-mage-tasks-from-buffer))))
+
+(provide 'taskrunner-general)
 ;;; taskrunner-general.el ends here
