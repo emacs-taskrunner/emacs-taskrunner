@@ -19,20 +19,31 @@ All names are prefixed with the string provided by PREFIX."
         (let ((shell-scripts (directory-files DIR nil FILETYPE-REGEXP)))
           (map 'list (lambda (elem)
                        (concat PREFIX " " elem))
-               shell-scripts)))
-    nil))
+               shell-scripts)))))
 
-(defun taskrunner--get-bash-scripts (DIR)
-  "Retrieve all bash scripts in directory DIR."
+(defun taskrunner-get-bash-scripts (DIR)
+  "Retrieve the rake tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"BASH TASK1\" \"BASH TASK2\"...)"
   (taskrunner--get-scripts DIR "\\.sh$" "BASH"))
 
-(defun taskrunner--get-powershell-scripts (DIR)
-  "Retrieve all powershell scripts in directory DIR."
+(defun taskrunner-get-powershell-scripts (DIR)
+  "Retrieve the rake tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"POWERSHELL TASK1\" \"POWERSHELL TASK2\"...)"
   (taskrunner--get-scripts DIR "\\.ps1$" "POWERSHELL"))
 
-(defun taskrunner--get-zsh-scripts (DIR)
-  "Retrieve all zsh scripts in directory DIR."
+(defun taskrunner-get-zsh-scripts (DIR)
+  "Retrieve the rake tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"ZSH TASK1\" \"ZSH TASK2\"...)"
   (taskrunner--get-scripts DIR "\\.zsh$" "ZSH"))
+
+(defun taskrunner-get-fish-scripts (DIR)
+  "Retrieve the rake tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"FISH TASK1\" \"FISH TASK2\"...)"
+  (taskrunner--get-scripts DIR "\\.fish$" "FISH"))
 
 (provide 'taskrunner-shell)
 ;;; taskrunner-shell.el ends here
