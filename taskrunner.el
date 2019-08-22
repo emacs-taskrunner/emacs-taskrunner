@@ -250,13 +250,12 @@ to a single file."
      ((member "GNUmakefile" proj-root-files)
       (push (list 'MAKE (expand-file-name "GNUmakefile" DIR)) files)))
 
-    ;; There might be multiple files related to these taskrunner/build systems
-
-    ;; Gradle
-    ;; There are several gradle files and we want to display them all
     ;; TODO:
     ;; Would it be too expensive(in terms of time) to list the directory again
     ;; with regexp?
+
+    ;; Gradle
+    ;; There are several gradle files and we want to display them all
     (setq temp '())
     (map 'list (lambda (elem)
                  (if (and (string-match-p ".*gradle*" elem)
@@ -331,6 +330,26 @@ updating the cache."
     (if (member "project.clj" work-dir-files)
         (setq tasks (append tasks (taskrunner--start-leiningen-task-process DIR))))
 
+    ;; Cmake project. If it is an insource build then nothing is done and the
+    ;; makefile contents are extracted in the code below.
+    ;; In the case of having a specific build folder, then look for it or ask the user.
+    (if (member "CMakeLists.txt" work-dir-files)
+        (setq tasks (append (taskrunner-cmake-find-build-folder DIR))))
+
+    ;; There should only be one makefile in the directory only look for one type
+    ;; of name.
+    (cond
+     ((member "Makefile" work-dir-files)
+      (setq tasks (append tasks (taskrunner-get-make-targets
+                                 DIR "Makefile" taskrunner-retrieve-all-make-targets))))
+     ((member "makefile" work-dir-files)
+      (setq tasks (append tasks (taskrunner-get-make-targets
+                                 DIR "makefile" taskrunner-retrieve-all-make-targets))))
+     ((member "GNUmakefile" work-dir-files)
+      (setq tasks (append tasks (taskrunner-get-make-targets
+                                 DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
+
+    ;;; Static targets. These will never change and are hardcoded
     (if (member "Cargo.toml" work-dir-files)
         (setq tasks (append tasks taskrunner--rust-targets)))
 
@@ -348,24 +367,7 @@ updating the cache."
     (if (projectile-cabal-project-p)
         (setq tasks (append taskrunner--cabal-targets)))
 
-    ;; Cmake project. If it is an insource build then nothing is done and the
-    ;; makefile contents are extracted in the code below otherwise, try to look
-    ;; for a build folder. If none is found then query the user to select one.
-    (if (member "CMakeLists.txt" work-dir-files)
-        (setq tasks (append (taskrunner-cmake-find-build-folder DIR))))
-
-    ;; There should only be one makefile in the directory only look for one type
-    ;; of name.
-    (cond
-     ((member "Makefile" work-dir-files)
-      (setq tasks (append tasks (taskrunner-get-make-targets
-                                 DIR "Makefile" taskrunner-retrieve-all-make-targets))))
-     ((member "makefile" work-dir-files)
-      (setq tasks (append tasks (taskrunner-get-make-targets
-                                 DIR "makefile" taskrunner-retrieve-all-make-targets))))
-     ((member "GNUmakefile" work-dir-files)
-      (setq tasks (append tasks (taskrunner-get-make-targets
-                                 DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
+    ;;; Return the tasks collected
     tasks))
 
 (defun taskrunner-get-tasks-from-cache (&optional DIR)
@@ -424,9 +426,11 @@ containing the new tasks."
 
 (defun taskrunner--generate-buffer-name (TASKRUNNER TASK)
   "Generate a buffer name for compilation of TASK with TASKRUNNER program."
+  ;; The compilation-start function requires a function which accepts only 1
+  ;; argument, the mode. It is necessary to return a lambda function so we can
+  ;; use the taskrunner/task combo in the name.
   (lambda (mode)
     ;; This is just so the bytecompiler does not complain.
-    ;; The mode is useless
     (intern mode)
     (concat "*taskrunner-" TASKRUNNER "-" TASK "*" )))
 
