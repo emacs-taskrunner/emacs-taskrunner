@@ -2,7 +2,8 @@
 - [X] Add support for caching using project root
 - [X] Add support for updating the cache
 - [X] Rework grunt tasks so they are retrieved synchronously for now(async later!)
-- [ ] Add option to open build/task/target files(makefile, package.json, gruntfile...)
+- [X] Add option to open build/task/target files(makefile, package.json, gruntfile...)
 - [ ] Add tests
 - [ ] Add proper documentation to all modules/files in project
 - [ ] Setup cask?
+- [ ] Add a CI pipeline for testing
