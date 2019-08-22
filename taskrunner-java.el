@@ -67,8 +67,10 @@
                    (concat "GRADLE" " " (car (split-string elem " "))))
            (split-string (buffer-string) "\n")))))
 
-(defun taskrunner--get-gradle-tasks (dir)
-  "Retrieve the gradle tasks for the project in directory DIR."
+(defun taskrunner-get-gradle-tasks (dir)
+  "Retrieve the gradle tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"GRADLE TASK1\" \"GRADLE TASK2\"...)"
   (let ((default-directory dir)
         (buff (get-buffer-create taskrunner-gradle-tasks-buffer-name))
         (gradle-tasks '()))
@@ -103,7 +105,7 @@
   "Retrieve all and tasks from the current buffer.
 This function is meant to be used with the output of `ant -verbose -p'.
 If you need to retrieve tasks from ant, use the function
-`taskrunner--get-ant-tasks' instead of this."
+`taskrunner-get-ant-tasks' instead of this."
   (goto-char (point-min))
   (let ((beg (search-forward-regexp "Main targets:\n\n" nil t))
         (ant-tasks '()))
@@ -147,9 +149,11 @@ If you need to retrieve tasks from ant, use the function
     ;; Return the tasks after killing buffer
     ant-tasks))
 
-(defun taskrunner--get-ant-tasks (dir)
-  "Retrieve all ant tasks from the project in directory DIR."
-  (let ((default-directory dir)
+(defun taskrunner-get-ant-tasks (DIR)
+  "Retrieve the ant tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"ANT TASK1\" \"ANT TASK2\"...)"
+  (let ((default-directory DIR)
         (buff (get-buffer-create taskrunner-ant-tasks-buffer-name)))
     (call-process "ant"  nil taskrunner-ant-tasks-buffer-name  nil "-verbose" "-p")
     (with-temp-buffer
