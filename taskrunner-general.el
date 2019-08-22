@@ -21,15 +21,26 @@
   :group 'taskrunner
   :type 'string)
 
-(defcustom taskrunner-go-task-buffer-name "*taskrunner-go-task*"
+(defcustom taskrunner-go-task-buffer-name "*taskrunner-go-task-tasks*"
   "Temporary buffer name used to collect all targets for go task.
 The process output of the command `task -l' is loaded in here."
   :group 'taskrunner
   :type 'string)
 
-(defcustom taskrunner-mage-task-buffer-name "*taskrunner-mage*"
+(defcustom taskrunner-mage-task-buffer-name "*taskrunner-mage-tasks*"
   "Temporary buffer name used to collect all targets for mage.
 The process output of the command `mage -l' is loaded in here."
+  :group 'taskrunner
+  :type 'string)
+
+(defcustom taskrunner-doit-bin-path "~/.local/bin/"
+  "Path used to locate the `doit' taskrunner binary."
+  :group 'taskrunner
+  :type 'string)
+
+(defcustom taskrunner-doit-task-buffer-name "*taskrunner-doit-tasks*"
+  "Temporary buffer name used to collect all targets for doit.
+The process output of the command `doit list' is loaded in here."
   :group 'taskrunner
   :type 'string)
 
@@ -90,6 +101,31 @@ This function returns a list of the form:
     (with-temp-buffer
       (set-buffer taskrunner-mage-task-buffer-name)
       (taskrunner--get-mage-tasks-from-buffer))))
+
+(defun taskrunner--get-doit-tasks-from-buffer ()
+  "Retrieve all doit tasks from the current buffer."
+  (goto-char (point-min))
+  (let ((targets '()))
+    (dolist (elem (split-string (buffer-string) "\n"))
+      (push (concat "DOIT" " "(car (split-string elem " "))) targets)
+      )
+    (kill-current-buffer)
+    ;; Remove the first target since it is null due to double newlines at the
+    ;; end of buffer
+    (if (not (null targets))
+        (pop targets))
+    targets))
+
+(defun taskrunner-get-doit-tasks (DIR)
+  "Retrieve the mage tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"DOIT TASK1\" \"DOIT TASK2\"...)"
+  (let ((default-directory DIR)
+        (exec-path (cons taskrunner-doit-bin-path exec-path)))
+    (call-process "doit" nil taskrunner-doit-task-buffer-name nil "list")
+    (with-temp-buffer
+      (set-buffer taskrunner-doit-task-buffer-name)
+      (taskrunner--get-doit-tasks-from-buffer))))
 
 (provide 'taskrunner-general)
 ;;; taskrunner-general.el ends here

@@ -36,6 +36,8 @@ systems/frontends listed below.
 - [X] stack
 - [X] cabal
 - [X] [[https://github.com/go-task/task][go-task]] 
+- [X] [[https://github.com/magefile/mage][mage]] 
+- [X] [[https://github.com/pydoit/doit][doit]] 
 **** User interfaces
 - [X] ivy
 - [X] helm
@@ -45,10 +47,8 @@ systems/frontends listed below.
 - [ ] tasks.json(VSCode)
 - [ ] [[https://github.com/welaika/wordmove][wordmove?]] 
 - [ ][[https://github.com/jakedeichert/mask][ mask]] 
-- [ ] [[https://github.com/pydoit/doit][doit]] 
 - [ ] [[https://github.com/sagiegurari/cargo-make][cargo-make?]] 
 - [ ] [[https://github.com/pantsbuild/pants][pants]] 
-- [ ] [[https://github.com/magefile/mage][mage]] 
 - [ ] [[https://github.com/casey/just][just]] 
 - [ ] Meson/Ninja
 - [ ] sbt
