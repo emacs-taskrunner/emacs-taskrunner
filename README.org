@@ -48,6 +48,8 @@ systems/frontends listed below.
 - [ ] [[https://github.com/pydoit/doit][doit]] 
 - [ ] [[https://github.com/sagiegurari/cargo-make][cargo-make?]] 
 - [ ] [[https://github.com/pantsbuild/pants][pants]] 
+- [ ] [[https://github.com/magefile/mage][mage]] 
+- [ ] [[https://github.com/casey/just][just]] 
 - [ ] Meson/Ninja
 - [ ] sbt
 - [ ] Buck(?)
