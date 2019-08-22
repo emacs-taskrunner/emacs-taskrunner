@@ -35,6 +35,7 @@ systems/frontends listed below.
 - [X] CMake
 - [X] stack
 - [X] cabal
+- [X] [[https://github.com/go-task/task][go-task]] 
 **** User interfaces
 - [X] ivy
 - [X] helm
@@ -42,7 +43,6 @@ systems/frontends listed below.
 *** Planning to add support for
 - [ ] Apache maven
 - [ ] tasks.json(VSCode)
-- [ ] [[https://github.com/go-task/task][go-task]] 
 - [ ] [[https://github.com/welaika/wordmove][wordmove?]] 
 - [ ][[https://github.com/jakedeichert/mask][ mask]] 
 - [ ] [[https://github.com/pydoit/doit][doit]] 

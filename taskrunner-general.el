@@ -1,8 +1,16 @@
+;;; taskrunner-general.el --- Provide functions to access general taskrunners not tied to any language -*- lexical-binding: t; -*-
+;; Copyright (C) 2019 Yavor Konstantinov
+
+;;; Commentary:
+;; Support included for:
+;; Golang's Task
 
 ;;; Code:
 
+;;;; Required
 (require 'projectile)
 
+;;;; Variables
 (defcustom go-task-bin-path "~/go/bin/"
   "Path used to locate the `task' golang binary."
   :group 'taskrunner
@@ -14,6 +22,7 @@ The process output of the command `task -l' is loaded in here."
   :group 'taskrunner
   :type 'string)
 
+;;;; Functions
 (defun taskrunner--get-go-tasks-from-buffer ()
   "Retrieve all go tasks from the currently visited buffer.
 The tasks are returned in the form:
@@ -30,11 +39,12 @@ The tasks are returned in the form:
         (map 'list (lambda (elem)
                      (concat "TASK" " " elem))
              targets)
-      targets)
-    ))
+      targets)))
 
 (defun taskrunner-get-go-task-tasks (DIR)
-  "Retrieve all targets from the golang `task' taskrunner in directory DIR."
+  "Retrieve the golang Task tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"TASK TASK1\" \"TASK TASK2\"...)"
   (let ((default-directory DIR)
         (exec-path (cons go-task-bin-path exec-path)))
     (call-process "task" nil go-task-buffer-name nil "-l")
