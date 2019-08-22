@@ -1,16 +1,23 @@
-;; Leiningen task retrieval
+;;; taskrunner-leiningen.el --- Provide functions to retrieve clojure tasks via lein -*- lexical-binding: t; -*-
+;; Copyright (C) 2019 Yavor Konstantinov
+
+;;;; Commentary:
+;; Provide support for Leiningen(Clojure)
+
+;;;; Code:
+
+;;;; Variables
 
 (defcustom taskrunner-leiningen-buffer-name "*taskrunner-leiningen-tasks*"
   "Name of the buffer temporarily created to be used for retrieving leiningen tasks."
   :group 'taskrunner
   :type 'string)
 
-(defcustom taskrunner-leiningen-task-section-header-regexp
+(defconst taskrunner-leiningen-task-section-header-regexp
   "Several tasks are available:\n"
-  "Regexp used to match the header of the task section in the leiningen help
-command. This is used to retrieve all of the tasks."
-  :group 'taskrunner
-  :type 'string)
+  "Regexp used to match the start of the tasks output from leiningen.")
+
+;;;; Functions
 
 (defun taskrunner--get-leiningen-tasks-from-buffer ()
   "Retrieve all leiningen tasks from the current buffer."
@@ -20,26 +27,27 @@ command. This is used to retrieve all of the tasks."
                         (search-forward-regexp "^$"))
       (map 'list (lambda (elem)
                    (concat "LEIN" " " (car (split-string elem " "))))
-           (split-string (buffer-string) "\n"))
-      )
-    )
-  )
+           (split-string (buffer-string) "\n")))))
 
-(defun taskrunner--start-leiningen-task-process (dir)
-  "Start the mix help process for project in DIR and retrieve mix tasks."
-  (let ((default-directory dir)
+(defun taskrunner-get-leiningen-tasks(DIR)
+  "Retrieve the rake tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"LEIN TASK1\" \"LEIN TASK2\"...)"
+  (let ((default-directory DIR)
         (buff (get-buffer-create taskrunner-leiningen-buffer-name))
-        (lein-tasks) ;; Store the elixir tasks retrieved
-        )
+        ;;; Store the elixir tasks retrieved
+        (lein-tasks))
+
     (call-process "lein" nil taskrunner-leiningen-buffer-name nil "-h")
     (with-temp-buffer
       (set-buffer buff)
       (goto-char (point-min))
       (setq lein-tasks (taskrunner--get-leiningen-tasks-from-buffer))
-      (kill-current-buffer)
-      )
-    (butlast lein-tasks)
-    )
-  )
+      (kill-current-buffer))
+    ;;; The last line of the output of Leiningen is always \n\n This results in
+    ;;; erronous output where the last task is of the form: "LEIN "
+    ;;; (i.e. its blank) so it must be removed.
+    (butlast lein-tasks)))
 
 (provide 'taskrunner-leiningen)
+;;; taskrunner-leiningen.el ends here
