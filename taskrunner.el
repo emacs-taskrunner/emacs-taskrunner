@@ -367,6 +367,9 @@ updating the cache."
             (member "JUSTFILE" work-dir-files))
         (setq tasks (append tasks (taskrunner-get-just-tasks DIR))))
 
+    (if (member "Makefile.yaml" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-cargo-make-tasks DIR))))
+
     ;; Cmake project. If it is an insource build then nothing is done and the
     ;; makefile contents are extracted in the code below.
     ;; In the case of having a specific build folder, then look for it or ask the user.

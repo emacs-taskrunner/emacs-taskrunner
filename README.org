@@ -40,6 +40,7 @@ systems/frontends listed below.
 - [X] Cask(Limited Support)
 - [X] stack(Limited Support)
 - [X] cabal(Limited Support)
+- [X] [[https://github.com/sagiegurari/cargo-make][cargo-make]]
 **** User interfaces
 - [X] ivy
 - [X] helm
@@ -47,7 +48,6 @@ systems/frontends listed below.
 *** Planning to add support for
 - [ ] Apache maven
 - [ ] [[https://waf.io/][waf]] 
-- [ ] [[https://github.com/sagiegurari/cargo-make][cargo-make]]
 - [ ] [[https://github.com/pantsbuild/pants][pants]] 
 - [ ] tasks.json(VSCode)
 - [ ] Meson
