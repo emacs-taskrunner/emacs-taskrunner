@@ -359,6 +359,14 @@ updating the cache."
     (if (member "magefile.go" work-dir-files)
         (setq tasks (append tasks (taskrunner-get-mage-tasks DIR))))
 
+    (if (member "maskfile.md" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-mask-tasks DIR))))
+
+    (if (or (member "justfile" work-dir-files)
+            (member "Justfile" work-dir-files)
+            (member "JUSTFILE" work-dir-files))
+        (setq tasks (append tasks (taskrunner-get-just-tasks DIR))))
+
     ;; Cmake project. If it is an insource build then nothing is done and the
     ;; makefile contents are extracted in the code below.
     ;; In the case of having a specific build folder, then look for it or ask the user.
