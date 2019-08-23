@@ -21,6 +21,11 @@
   :group 'taskrunner
   :type 'string)
 
+(defcustom taskrunner-doit-bin-path "~/.local/bin/"
+  "Path used to locate the `doit' taskrunner binary."
+  :group 'taskrunner
+  :type 'string)
+
 (defcustom taskrunner-go-task-buffer-name "*taskrunner-go-task-tasks*"
   "Temporary buffer name used to collect all targets for go task.
 The process output of the command `task -l' is loaded in here."
@@ -30,11 +35,6 @@ The process output of the command `task -l' is loaded in here."
 (defcustom taskrunner-mage-task-buffer-name "*taskrunner-mage-tasks*"
   "Temporary buffer name used to collect all targets for mage.
 The process output of the command `mage -l' is loaded in here."
-  :group 'taskrunner
-  :type 'string)
-
-(defcustom taskrunner-doit-bin-path "~/.local/bin/"
-  "Path used to locate the `doit' taskrunner binary."
   :group 'taskrunner
   :type 'string)
 
@@ -140,21 +140,19 @@ This function returns a list of the form:
       (taskrunner--get-doit-tasks-from-buffer))))
 
 
-;; TODO Finish this
 (defun taskrunner--get-just-tasks-from-buffer ()
-  "Retrieve all doit tasks from the current buffer."
+  "Retrieve all just tasks from the current buffer."
   (goto-char (point-min))
   (let ((targets '()))
     (when (search-forward-regexp "Available recipes:\n" nil t)
       (narrow-to-region (point-at-bol) (point-max))
-      (map 'list ())
-      )
-    (kill-current-buffer)
-    ;; Remove the first target since it is null due to double newlines at the
-    ;; end of buffer
-    (if (not (null targets))
-        (pop targets))
-    targets))
+      (setq targets (map 'list (lambda (elem)
+                                 (concat "JUST" " " (car (split-string elem " " t))))
+                         (split-string (buffer-string) "\n")))
+      (kill-current-buffer)
+      (if targets
+          (butlast targets)
+        nil))))
 
 (defun taskrunner-get-just-tasks (DIR)
   "Retrieve the mage tasks for the project in directory DIR.
