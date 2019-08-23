@@ -44,6 +44,18 @@ The process output of the command `doit list' is loaded in here."
   :group 'taskrunner
   :type 'string)
 
+(defcustom taskrunner-just-task-buffer-name "*taskrunner-just-task-tasks*"
+  "Temporary buffer name used to collect all targets for just.
+The process output of the command `just --list' is loaded in here."
+  :group 'taskrunner
+  :type 'string)
+
+(defcustom taskrunner-mask-task-buffer-name "*taskrunner-mask-tasks*"
+  "Temporary buffer name used to collect all targets for mask.
+The process output of the command `mast --help' is loaded in here."
+  :group 'taskrunner
+  :type 'string)
+
 ;;;; Functions
 (defun taskrunner--get-go-tasks-from-buffer ()
   "Retrieve all go tasks from the currently visited buffer.
@@ -126,6 +138,56 @@ This function returns a list of the form:
     (with-temp-buffer
       (set-buffer taskrunner-doit-task-buffer-name)
       (taskrunner--get-doit-tasks-from-buffer))))
+
+
+;; TODO Finish this
+(defun taskrunner--get-just-tasks-from-buffer ()
+  "Retrieve all doit tasks from the current buffer."
+  (goto-char (point-min))
+  (let ((targets '()))
+    (when (search-forward-regexp "Available recipes:\n" nil t)
+      (narrow-to-region (point-at-bol) (point-max))
+      (map 'list ())
+      )
+    (kill-current-buffer)
+    ;; Remove the first target since it is null due to double newlines at the
+    ;; end of buffer
+    (if (not (null targets))
+        (pop targets))
+    targets))
+
+(defun taskrunner-get-just-tasks (DIR)
+  "Retrieve the mage tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"JUST TASK1\" \"JUST TASK2\"...)"
+  (let ((default-directory DIR))
+    (call-process "just" nil taskrunner-just-task-buffer-name nil "--list")
+    (with-temp-buffer
+      (set-buffer taskrunner-just-task-buffer-name)
+      (taskrunner--get-just-tasks-from-buffer))))
+
+(defun taskrunner--get-mask-tasks-from-buffer ()
+  "Retrieve all mask tasks from the current buffer."
+  (goto-char (point-min))
+  (let ((targets '()))
+    (when (search-forward-regexp "SUBCOMMANDS:\n" nil t)
+      (narrow-to-region (point-at-bol) (point-max))
+      (setq targets (map 'list
+                         (lambda (elem)
+                           (concat "MASK" " " (car (split-string elem " " t))))
+                         (split-string (buffer-string) "\n")))
+      (kill-current-buffer)
+      (butlast targets))))
+
+(defun taskrunner-get-mask-tasks (DIR)
+  "Retrieve the mage tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"MASK TASK1\" \"MASK TASK2\"...)"
+  (let ((default-directory DIR))
+    (call-process "mask" nil taskrunner-mask-task-buffer-name nil "--help")
+    (with-temp-buffer
+      (set-buffer taskrunner-just-mask-buffer-name)
+      (taskrunner--get-mask-tasks-from-buffer))))
 
 (provide 'taskrunner-general)
 ;;; taskrunner-general.el ends here
