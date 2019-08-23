@@ -46,12 +46,13 @@ systems/frontends listed below.
 - [X] ido
 *** Planning to add support for
 - [ ] Apache maven
-- [ ] tasks.json(VSCode)
-- [ ] [[https://github.com/welaika/wordmove][wordmove?]] 
+- [ ] [[https://waf.io/][waf]] 
 - [ ] [[https://github.com/sagiegurari/cargo-make][cargo-make?]] 
 - [ ] [[https://github.com/pantsbuild/pants][pants]] 
-- [ ] Meson/Ninja
+- [ ] tasks.json(VSCode)
+- [ ] Meson
+- [ ] Ninja
 - [ ] sbt
-- [ ] Buck(?)
-- [ ] Bazel(?)
+- [ ] Buck
+- [ ] Bazel
 - [ ] msbuild(?)
