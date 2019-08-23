@@ -257,7 +257,24 @@ to a single file."
         (push (list 'DOIT (expand-file-name "dodo.py" DIR)) files))
 
     (if (member "magefile.go" proj-root-files)
-        (push (list 'GO-TASK (expand-file-name "magefile.go" DIR)) files))
+        (push (list 'MAGE (expand-file-name "magefile.go" DIR)) files))
+
+    (if (member "maskfile.md" proj-root-files)
+        (push (list 'MASK (expand-file-name "maskfile.md" DIR)) files))
+
+    (if (member "Makefile.yaml" proj-root-files)
+        (push (list 'CARGO-MAKE (expand-file-name "Makefile.yaml" DIR)) files))
+
+    ;; Justfile names are case insensitive. Will need to add support for that
+    ;; but this will be at a later time. For now, add support for the(what I
+    ;; think are) most common names
+    (cond
+     ((member ("justfile" proj-root-files))
+      (push (list 'JUST (expand-file-name "justfile" DIR)) files))
+     ((member ("Justfile" proj-root-files))
+      (push (list 'JUST (expand-file-name "Justfile" DIR)) files))
+     ((member ("JUSTFILE" proj-root-files))
+      (push (list 'JUST (expand-file-name "JUSTFILE" DIR)) files)))
 
     (cond
      ((member "Makefile" proj-root-files)
