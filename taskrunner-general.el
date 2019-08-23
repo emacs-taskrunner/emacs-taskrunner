@@ -56,6 +56,13 @@ The process output of the command `mast --help' is loaded in here."
   :group 'taskrunner
   :type 'string)
 
+(defcustom taskrunner-cargo-make-task-buffer-name "*taskrunner-cargo-make-tasks*"
+  "Temporary buffer name used to collect all targets for cargo-make.
+The process output of the command `cargo make --list-all-steps'
+is loaded in here."
+  :group 'taskrunner
+  :type 'string)
+
 ;;;; Functions
 (defun taskrunner--get-go-tasks-from-buffer ()
   "Retrieve all go tasks from the currently visited buffer.
@@ -186,6 +193,34 @@ This function returns a list of the form:
     (with-temp-buffer
       (set-buffer taskrunner-just-mask-buffer-name)
       (taskrunner--get-mask-tasks-from-buffer))))
+
+(defun taskrunner--get-cargo-make-tasks-from-buffer ()
+  "Retrieve all cargo-make tasks from the current buffer."
+  (goto-char (point-min))
+  (let ((targets '())
+        (beg)
+        (end))
+    (while (search-forward-regexp "^-+\n" nil t)
+      (setq beg (point-at-bol))
+      (search-forward-regexp "^$" nil t)
+      (forward-line -1)
+      (setq end (point-at-eol))
+      (narrow-to-region beg end)
+      (dolist (el (split-string (buffer-string) "\n"))
+        (push (concat "CARGO-MAKE" " " (car (split-string el " "))) targets))
+      (widen))
+    (kill-current-buffer)
+    targets))
+
+(defun taskrunner-get-cargo-make-tasks (DIR)
+  "Retrieve the mage tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"CARGO-MAKE TASK1\" \"CARGO-MAKE TASK2\"...)"
+  (let ((default-directory DIR))
+    (call-process "cargo" nil taskrunner-cargo-make-task-buffer-name nil "make" "--list-all-steps")
+    (with-temp-buffer
+      (set-buffer taskrunner-cargo-make-task-buffer-name)
+      (taskrunner--get-cargo-make-tasks-from-buffer))))
 
 (provide 'taskrunner-general)
 ;;; taskrunner-general.el ends here
