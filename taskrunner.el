@@ -87,6 +87,7 @@
 (require 'taskrunner-static-targets)
 (require 'taskrunner-mix)
 (require 'taskrunner-leiningen)
+(require 'taskrunner-general)
 
 (defgroup taskrunner nil
   "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively."
@@ -249,6 +250,15 @@ to a single file."
     (if (member "build.xml" proj-root-files)
         (push (list 'ANT (expand-file-name "build.xml" DIR)) files))
 
+    (if (member "Taskfile.yml" proj-root-files)
+        (push (list 'GO-TASK (expand-file-name "Taskfile.yml" DIR)) files))
+
+    (if (member "dodo.py" proj-root-files)
+        (push (list 'DOIT (expand-file-name "dodo.py" DIR)) files))
+
+    (if (member "magefile.go" proj-root-files)
+        (push (list 'GO-TASK (expand-file-name "magefile.go" DIR)) files))
+
     (cond
      ((member "Makefile" proj-root-files)
       (push (list 'MAKE (expand-file-name "Makefile" DIR)) files))
@@ -340,6 +350,15 @@ updating the cache."
     (if (member "project.clj" work-dir-files)
         (setq tasks (append tasks (taskrunner-get-leiningen-tasks DIR))))
 
+    (if (member "Taskfile.yml" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-go-task-tasks DIR))))
+
+    (if (member "dodo.py" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-doit-tasks DIR))))
+
+    (if (member "magefile.go" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-mage-tasks DIR))))
+
     ;; Cmake project. If it is an insource build then nothing is done and the
     ;; makefile contents are extracted in the code below.
     ;; In the case of having a specific build folder, then look for it or ask the user.
@@ -424,12 +443,13 @@ is a list of all the tasks in that directory."
                       (projectile-project-root)))
          (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache))
          (cache-status nil))
-    ;; If the tasks do not exist then collect them
+    ;; If the tasks do not exist then collect them and set cache-status.
+    ;; cache-status can be t if the project is already cached or nil if it had
+    ;; to be retrieved.
     (if (null proj-tasks)
         (progn (setq proj-tasks (taskrunner-collect-tasks proj-root))
                (setq cache-status nil))
-      (setq cache-status t)
-      )
+      (setq cache-status t))
     (list cache-status proj-root proj-tasks)))
 
 (defun taskrunner-project-cached-p (&optional DIR)
