@@ -28,18 +28,18 @@ systems/frontends listed below.
 - [X] mix
 - [X] leinengen
 - [X] rake
-- [X] cargo(Rust)
-- [X] go(Golang)
-- [X] Cask
 - [X] Make
 - [X] CMake
-- [X] stack
-- [X] cabal
 - [X] [[https://github.com/go-task/task][go-task]] 
 - [X] [[https://github.com/magefile/mage][mage]] 
 - [X] [[https://github.com/pydoit/doit][doit]] 
 - [X] [[https://github.com/jakedeichert/mask][mask]] 
 - [X] [[https://github.com/casey/just][just]] 
+- [X] cargo(Limited Support)
+- [X] go compiler(Limited support)
+- [X] Cask(Limited Support)
+- [X] stack(Limited Support)
+- [X] cabal(Limited Support)
 **** User interfaces
 - [X] ivy
 - [X] helm
@@ -47,7 +47,7 @@ systems/frontends listed below.
 *** Planning to add support for
 - [ ] Apache maven
 - [ ] [[https://waf.io/][waf]] 
-- [ ] [[https://github.com/sagiegurari/cargo-make][cargo-make?]] 
+- [ ] [[https://github.com/sagiegurari/cargo-make][cargo-make]]
 - [ ] [[https://github.com/pantsbuild/pants][pants]] 
 - [ ] tasks.json(VSCode)
 - [ ] Meson
