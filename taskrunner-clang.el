@@ -168,30 +168,5 @@ If HIDDEN is non-nil then include targets which start with _."
       (setq build-path (expand-file-name build-dir-name ROOT))
       (setq targets (taskrunner-get-ninja-tasks build-path)))))
 
-(defmacro taskrunner-file-in-source-folder-p (ROOT ROOT-FILES FILE-NAME)
-  "Look for FILE-NAME within the source folder of a project in directory ROOT.
-The source folder is located from ROOT-FILES which is a list containing all of
-the files inside of the project's root folder."
-  `(let ((src-folder-files)
-         (src-folder-path)
-         (found-src-flag nil)
-         (found-file-p nil)
-         (i 0))
-     (while (and
-             (not found-src-flag)
-             (<= i (length taskrunner-build-dir-list)))
-
-       (when (member (elt taskrunner-source-dir-list i) ,ROOT-FILES)
-         (setq src-folder-path (expand-file-name (elt taskrunner-source-dir-list i) ,ROOT))
-         (setq found-src-flag t))
-       (setq i (1+ i)))
-
-     (when found-src-flag
-       (setq src-folder-files (directory-files src-folder-path))
-       (when (member ,FILE-NAME src-folder-files)
-         (setq found-file-p t)))
-
-     found-file-p))
-
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here
