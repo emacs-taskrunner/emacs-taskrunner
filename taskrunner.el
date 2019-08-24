@@ -181,7 +181,7 @@ use the project root for the currently visited buffer."
           ;; Load all the caches with the retrieved info
           (setq taskrunner-tasks-cache (nth 0 file-tasks))
           (setq taskrunner-last-command-cache(nth 1 file-tasks))
-          (setq taskrunner-cmake-build-cache (nth 2 file-tasks)))))))
+          (setq taskrunner-build-cache (nth 2 file-tasks)))))))
 
 (defun taskrunner--format-list-for-write (LIST)
   "Format the alist LIST for writing.
@@ -211,7 +211,7 @@ the strings are still surrounded with double quotes."
   "Save all tasks in the cache to the cache file in Emacs user directory."
   (taskrunner--write-to-cache-file (list (taskrunner--format-list-for-write taskrunner-tasks-cache)
                                          (taskrunner--format-list-for-write taskrunner-last-command-cache)
-                                         (taskrunner--format-list-for-write taskrunner-cmake-build-cache))))
+                                         (taskrunner--format-list-for-write taskrunner-build-cache))))
 
 (defmacro taskrunner-buffer-matching-regexp (REGEXP DIRECTORY FILE-LIST KEY MATCH-LIST)
   "Create a list containing all file names in FILE-LIST which match REGEXP.
@@ -662,7 +662,7 @@ This is not meant to be used for anything seen by the user."
     (dolist (el taskrunner-last-command-cache)
       (insert (format "%s\n" el)))
     (insert "\nCMake build cache contents\n")
-    (dolist (el taskrunner-cmake-build-cache)
+    (dolist (el taskrunner-build-cache)
       (insert (format "%s\n" el)))
     (switch-to-buffer buff)))
 

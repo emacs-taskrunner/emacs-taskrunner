@@ -56,8 +56,8 @@ It is an alist of the form (project-root . build-folder)")
 
 (defun taskrunner-add-to-build-cache (PROJ-ROOT BUILD-DIR)
   "Add BUILD-DIR as the build directory for make in PROJ-ROOT."
-  (setq taskrunner-build-cache (assoc-delete-all (intern PROJ-ROOT) taskrunner-cmake-build-cache))
-  (push (list (intern PROJ-ROOT) BUILD-DIR) taskrunner-cmake-build-cache))
+  (setq taskrunner-build-cache (assoc-delete-all (intern PROJ-ROOT) taskrunner-build-cache))
+  (push (list (intern PROJ-ROOT) BUILD-DIR) taskrunner-build-cache))
 
 (defun taskrunner-get-build-cache (PROJ-ROOT)
   "Retrieve the build folder for PROJ-ROOT.  Return nil if it does not exist."
