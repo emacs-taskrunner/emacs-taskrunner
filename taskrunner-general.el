@@ -191,7 +191,7 @@ This function returns a list of the form:
   (let ((default-directory DIR))
     (call-process "mask" nil taskrunner-mask-task-buffer-name nil "--help")
     (with-temp-buffer
-      (set-buffer taskrunner-just-mask-buffer-name)
+      (set-buffer taskrunner-mask-task-buffer-name)
       (taskrunner--get-mask-tasks-from-buffer))))
 
 (defun taskrunner--get-cargo-make-tasks-from-buffer ()

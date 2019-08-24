@@ -211,8 +211,7 @@ where LOCATION_1, LOCATION_2...LOCATION_N can either be an alist of the form:
 \(FILE_NAME FILE_PATH) or it can be a single string containing the file path
 to a single file."
   (let ((proj-root-files (directory-files DIR))
-        (files '())
-        (temp '()))
+        (files '()))
 
     (if (member "package.json" proj-root-files)
         (push (list "NPM" (expand-file-name "package.json" DIR)) files))
