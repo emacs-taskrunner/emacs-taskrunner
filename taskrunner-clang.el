@@ -13,6 +13,15 @@
 (require 'cl-lib)
 
 ;;;; Code:
+(defcustom taskrunner-build-dir-list '("build" "Build" "buildDir" "builddir" "builds")
+  "A list containing the name of build folders to be looked for."
+  :group 'taskrunner
+  :type 'list)
+
+(defcustom taskrunner-source-dir-list '("src" "Src" "source" "Source")
+  "A list containing the name of source code folders to be looked for."
+  :group 'taskrunner
+  :type 'list)
 
 (defcustom taskrunner-retrieve-all-make-targets t
   "Variable indicates whether or not to always retrieve targets starting with `_'."
@@ -96,10 +105,6 @@ If HIDDEN is non-nil then include targets which start with _."
     )
   )
 
-(defcustom taskrunner-cmake-build-dir-list '("build" "Build" "buildDir" "builddir" "builds")
-  "A list containing the name of build folders which are used in CMake projects."
-  :group 'taskrunner
-  :type 'list)
 
 (defun taskrunner-cmake-find-build-folder (ROOT)
   "Attempt to locate the build folder in a CMake project in directory ROOT."
@@ -111,10 +116,10 @@ If HIDDEN is non-nil then include targets which start with _."
         (i 0))
     (while (and
             (not found-flag)
-            (<= i (length taskrunner-cmake-build-dir-list)))
+            (<= i (length taskrunner-build-dir-list)))
 
-      (when (member (elt taskrunner-cmake-build-dir-list i) dir-contents)
-        (setq build-dir-name (elt taskrunner-cmake-build-dir-list i))
+      (when (member (elt taskrunner-build-dir-list i) dir-contents)
+        (setq build-dir-name (elt taskrunner-build-dir-list i))
         (setq found-flag t))
 
       (setq i (1+ i)))
@@ -153,15 +158,40 @@ If HIDDEN is non-nil then include targets which start with _."
         (i 0))
     (while (and
             (not found-flag)
-            (<= i (length taskrunner-cmake-build-dir-list)))
+            (<= i (length taskrunner-build-dir-list)))
 
-      (when (member (elt taskrunner-cmake-build-dir-list i) dir-contents)
-        (setq build-dir-name (elt taskrunner-cmake-build-dir-list i))
+      (when (member (elt taskrunner-build-dir-list i) dir-contents)
+        (setq build-dir-name (elt taskrunner-build-dir-list i))
         (setq found-flag t))
       (setq i (1+ i)))
     (when found-flag
       (setq build-path (expand-file-name build-dir-name ROOT))
       (setq targets (taskrunner-get-ninja-tasks build-path)))))
+
+(defmacro taskrunner-file-in-source-folder-p (ROOT ROOT-FILES FILE-NAME)
+  "Look for FILE-NAME within the source folder of a project in directory ROOT.
+The source folder is located from ROOT-FILES which is a list containing all of
+the files inside of the project's root folder."
+  `(let ((src-folder-files)
+         (src-folder-path)
+         (found-src-flag nil)
+         (found-file-p nil)
+         (i 0))
+     (while (and
+             (not found-src-flag)
+             (<= i (length taskrunner-build-dir-list)))
+
+       (when (member (elt taskrunner-source-dir-list i) ,ROOT-FILES)
+         (setq src-folder-path (expand-file-name (elt taskrunner-source-dir-list i) ,ROOT))
+         (setq found-src-flag t))
+       (setq i (1+ i)))
+
+     (when found-src-flag
+       (setq src-folder-files (directory-files src-folder-path))
+       (when (member ,FILE-NAME src-folder-files)
+         (setq found-file-p t)))
+
+     found-file-p))
 
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here
