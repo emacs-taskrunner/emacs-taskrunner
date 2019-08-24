@@ -96,7 +96,7 @@ If HIDDEN is non-nil then include targets which start with _."
     )
   )
 
-(defcustom taskrunner-cmake-build-dir-list '("build" "Build")
+(defcustom taskrunner-cmake-build-dir-list '("build" "Build" "buildDir" "builddir" "builds")
   "A list containing the name of build folders which are used in CMake projects."
   :group 'taskrunner
   :type 'list)
