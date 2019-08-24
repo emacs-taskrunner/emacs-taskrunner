@@ -78,9 +78,9 @@ where PM is the package manager used."
 This function returns a list of the form:
 \(\"GULP TASK1\" \"GULP TASK2\"...)"
   (let ((default-directory DIR))
-    (map 'list (lambda (elem)
-                 (concat "GULP" " " elem))
-         (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n"))))
+    (butlast (map 'list (lambda (elem)
+                          (concat "GULP" " " elem))
+                  (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n")))))
 
 (defun taskrunner--get-grunt-tasks-from-buffer ()
   "Retrieve the grunt tasks from the current buffer and return them as a list.

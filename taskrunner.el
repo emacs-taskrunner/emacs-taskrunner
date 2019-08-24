@@ -323,6 +323,7 @@ to a single file."
     (taskrunner-buffer-matching-regexp ".*cabal.*" DIR proj-root-files 'CABAL files)
 
     (taskrunner-buffer-matching-regexp "go\\.\\(mod\\|sum\\)" DIR proj-root-files 'GO files)
+
     files))
 
 
@@ -473,6 +474,14 @@ systems and target name.  Example: \(\"MAKE target1\" \"MAKE
 target2\"...)
 
 If DIR is non-nil then tasks are gathered from that directory."
+  ;; Read the cache file if it exists.
+  ;; This is done only once at startup
+  (unless taskrunner--cache-file-read
+    (message "TASKRUNNER: READ CACHE!")
+    (taskrunner--read-cache-file)
+    (setq taskrunner--cache-file-read t))
+
+  ;; Variable used so that the async call can use the DIR argument
   (setq taskrunner--tempdir DIR)
   (async-start
    `(lambda ()
@@ -500,9 +509,10 @@ If DIR is non-nil then tasks are gathered from that directory."
      (let ((cache-status (car TARGETS))
            (proj-dir (cadr TARGETS))
            (proj-tasks (caddr TARGETS)))
-       ;; If the tasks are not cached then add them to the cache
+       ;; If the tasks are not cached then add them to the cache and write it to the file.
        (unless cache-status
-         (taskrunner-add-to-tasks-cache proj-dir proj-tasks))
+         (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
+         (taskrunner--save-tasks-to-cache-file))
        (funcall FUNC proj-tasks)))))
 
 (defun taskrunner-project-cached-p (&optional DIR)
@@ -515,7 +525,7 @@ Return t or nil."
         t
       nil)))
 
-(defun taskrunner-refresh-cache (&optional DIR)
+(defun taskrunner-refresh-cache-sync (&optional DIR)
   "Retrieve all tasks for project in DIR or the current project and set cache.
 If there were tasks previously loaded then remove them, retrieve all tasks
 again and set the corresponding project to the new list.  Return a list
@@ -530,6 +540,19 @@ containing the new tasks."
     (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
     ;; Write to the cache file when a new set of tasks is found
     (taskrunner--save-tasks-to-cache-file)))
+
+(defun taskrunner-refresh-cache-async (FUNC &optional DIR)
+  "Retrieve all tasks for project in DIR or the current project and set cache.
+If there were tasks previously loaded then remove them, retrieve all tasks
+again and set the corresponding project to the new list.  Return a list
+containing the new tasks."
+  (let* ((proj-root (if DIR
+                        DIR
+                      (projectile-project-root))))
+    ;; remove old tasks if they exist
+    (setq taskrunner-tasks-cache (assoc-delete-all (intern proj-root) taskrunner-tasks-cache))
+    (taskrunner-get-tasks-async FUNC)
+    ))
 
 (defun taskrunner--generate-buffer-name (TASKRUNNER TASK)
   "Generate a buffer name for compilation of TASK with TASKRUNNER program."
