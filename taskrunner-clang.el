@@ -96,38 +96,37 @@ If HIDDEN is non-nil then include targets which start with _."
     )
   )
 
+(defcustom taskrunner-cmake-build-dir-list '("build" "Build")
+  "A list containing the name of build folders which are used in CMake projects."
+  :group 'taskrunner
+  :type 'list)
+
 (defun taskrunner-cmake-find-build-folder (ROOT)
   "Attempt to locate the build folder in a CMake project in directory ROOT."
   (let ((dir-contents (directory-files ROOT))
+        (build-dir-name)
         (build-path)
-        (targets))
-    (cond
-     ((member "build" dir-contents)
-      (setq build-path (expand-file-name "build" ROOT))
-      (setq dir-contents (directory-files build-path))
-      (when (member "Makefile" dir-contents)
-        (setq targets (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets))))
+        (targets)
+        (found-flag nil)
+        (i 0))
+    (while (and
+            (not found-flag)
+            (<= i (length taskrunner-cmake-build-dir-list)))
 
-     ((member "Build" dir-contents)
-      (setq build-path (expand-file-name "Build" ROOT))
+      (when (member (elt taskrunner-cmake-build-dir-list i) dir-contents)
+        (setq build-dir-name (elt taskrunner-cmake-build-dir-list i))
+        (setq found-flag t))
+
+      (setq i (1+ i)))
+    (when found-flag
+      (setq build-path (expand-file-name build-dir-name ROOT))
       (setq dir-contents (directory-files build-path))
       (when (member "Makefile" dir-contents)
-        (setq targets (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets))
-        )
-      )
-     ;; Check if there are NO makefiles in the main folder.
-     ;; If there are not then prompt user to select a build folder for the makefile
-     ((not (or (member "Makefile" dir-contents)
-               (member "makefile" dir-contents)
-               (member "GNUmakefile" dir-contents)))
-      ;; Prompt and use that folder instead
-      (setq build-path
-            (read-directory-name "Select CMake build folder: " ROOT nil t))
-      (setq targets (taskrunner-get-make-targets build-path "Makefile" taskrunner-retrieve-all-make-targets))
-      )
-     )
-    (taskrunner-add-to-build-cache ROOT build-path)
-    targets))
+        (setq targets (taskrunner-get-make-targets build-path "Makefile" nil))
+        (taskrunner-add-to-build-cache ROOT build-path)))
+    targets
+    )
+  )
 
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here
