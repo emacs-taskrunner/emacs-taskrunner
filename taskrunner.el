@@ -188,6 +188,20 @@ use the project root for the currently visited buffer."
                                          taskrunner-last-command-cache
                                          taskrunner-cmake-build-cache)))
 
+(defmacro taskrunner-buffer-matching-regexp (REGEXP DIRECTORY FILE-LIST KEY MATCH-LIST)
+  "Create a list containing all file names in FILE-LIST which match REGEXP.
+If there are any matches then the list of matching names is added
+to alist MATCH-LIST with key KEY.  Each list element has the form:
+FILENAME ABSOLUTE-FILE-PATH
+and the absolute file path is created by concatenating DIRECTORY with filename."
+  `(let ((match-list '()))
+     (dolist (elem ,FILE-LIST)
+       (if (and (string-match-p ,REGEXP elem)
+                (not (file-directory-p (expand-file-name elem ,DIRECTORY))))
+           (push (list (intern elem) (expand-file-name elem ,DIRECTORY)) match-list)))
+     (when match-list
+       (push (list ,KEY match-list) ,MATCH-LIST))))
+
 (defun taskrunner-collect-taskrunner-files (DIR)
   "Collect the main taskrunner/build system files in DIR.
 
@@ -273,11 +287,11 @@ to a single file."
     ;; but this will be at a later time. For now, add support for the(what I
     ;; think are) most common names
     (cond
-     ((member ("justfile" proj-root-files))
+     ((member "justfile" proj-root-files)
       (push (list 'JUST (expand-file-name "justfile" DIR)) files))
-     ((member ("Justfile" proj-root-files))
+     ((member "Justfile" proj-root-files)
       (push (list 'JUST (expand-file-name "Justfile" DIR)) files))
-     ((member ("JUSTFILE" proj-root-files))
+     ((member "JUSTFILE" proj-root-files)
       (push (list 'JUST (expand-file-name "JUSTFILE" DIR)) files)))
 
     (cond
@@ -288,41 +302,13 @@ to a single file."
      ((member "GNUmakefile" proj-root-files)
       (push (list 'MAKE (expand-file-name "GNUmakefile" DIR)) files)))
 
-    ;; TODO:
-    ;; Would it be too expensive(in terms of time) to list the directory again
-    ;; with regexp?
+    (taskrunner-buffer-matching-regexp ".*gradle.*" DIR proj-root-files 'GRADLE files)
 
-    ;; Gradle
-    ;; There are several gradle files and we want to display them all
-    (setq temp '())
-    (map 'list (lambda (elem)
-                 (if (and (string-match-p ".*gradle*" elem)
-                          (not (file-directory-p (expand-file-name elem DIR))))
-                     (push (list (intern elem) (expand-file-name elem DIR)) temp)))
-         proj-root-files)
-    (if (not (null temp))
-        (push (list 'GRADLE temp) files))
+    (taskrunner-buffer-matching-regexp ".*cabal.*" DIR proj-root-files 'CABAL files)
 
-    ;; Cabal
-    (setq temp '())
-    (map 'list (lambda (elem)
-                 (if (and (string-match-p ".*cabal*" elem)
-                          (not (file-directory-p (expand-file-name elem DIR))))
-                     (push (list (intern elem) (expand-file-name elem DIR)) temp)))
-         proj-root-files)
-    (if (not (null temp))
-        (push (list 'CABAL temp) files))
-
-    ;; Golang
-    (setq temp '())
-    (map 'list (lambda (elem)
-                 (if (string-match-p ".*go.*" elem)
-                     (push (list (intern elem) (expand-file-name elem DIR)) temp)))
-         proj-root-files)
-    (if (not (null temp))
-        (push (list 'GO temp) files))
-
+    (taskrunner-buffer-matching-regexp "go\\.\\(mod\\|sum\\)" DIR proj-root-files 'GO files)
     files))
+
 
 (defun taskrunner-collect-tasks (DIR)
   "Locate and extract all tasks for the project in directory DIR.
@@ -437,7 +423,7 @@ If the project does not have any tasks cached then collect all tasks and update
 the cache.  If the tasks exist then simply return them.  The tasks returned are
 in a list of strings.  Each string has the form TASKRUNNER-PROGRAM TASK-NAME.
 
-Warning: This function is meant to be used synchronously."
+Warning: This function runs synchronously and will block Emacs!"
   ;; Read the cache file if it exists.
   ;; This is done only once at startup
   (unless taskrunner--cache-file-read
