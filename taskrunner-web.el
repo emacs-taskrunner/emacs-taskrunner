@@ -30,11 +30,6 @@ variable is nil then `npm' is used as default."
   :options '("npm" "yarn")
   :group 'taskrunner)
 
-(defcustom taskrunner-grunt-buffer-name "*taskrunner-grunt-tasks*"
-  "Buffer name used to retrieve grunt tasks."
-  :type 'string
-  :group 'taskrunner)
-
 (defconst taskrunner--js-gulp-tasks-command "gulp --tasks-simple"
   "Command used to retrieve the tasks for Gulp.")
 
@@ -106,11 +101,10 @@ This function is not meant to be used externally.  Use
 This function returns a list of the form:
 \(\"GRUNT TASK1\" \"GRUNT TASK2\"...)"
   (let ((default-directory DIR)
-        (buff (get-buffer-create taskrunner-grunt-buffer-name))
         (tasks))
-    (call-process "grunt" nil taskrunner-grunt-buffer-name nil "--help")
+    (call-process "grunt" nil (taskrunner--make-task-buff-name "grunt") nil "--help")
     (with-temp-buffer
-      (set-buffer buff)
+      (set-buffer (taskrunner--get-cargo-make-tasks-from-buffer "grunt"))
       (setq tasks (taskrunner--get-grunt-tasks-from-buffer))
       (kill-current-buffer))
     (butlast tasks)))

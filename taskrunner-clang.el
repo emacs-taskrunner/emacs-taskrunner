@@ -48,24 +48,24 @@
 CMake for either insource or outsource build and then call emacs-taskrunner again!"
   "Warning used to indicate that not build folder was found for CMake.")
 
-(defvar taskrunner-cmake-build-cache '()
-  "A cache used to store the CMake build folders for retrieval.
+(defvar taskrunner-build-cache '()
+  "A cache used to store project build folders for retrieval.
 It is an alist of the form (project-root . build-folder)")
 
 ;;;; Functions
 
 (defun taskrunner-add-to-build-cache (PROJ-ROOT BUILD-DIR)
   "Add BUILD-DIR as the build directory for make in PROJ-ROOT."
-  (setq taskrunner-cmake-build-cache (assoc-delete-all (intern PROJ-ROOT) taskrunner-cmake-build-cache))
+  (setq taskrunner-build-cache (assoc-delete-all (intern PROJ-ROOT) taskrunner-cmake-build-cache))
   (push (list (intern PROJ-ROOT) BUILD-DIR) taskrunner-cmake-build-cache))
 
 (defun taskrunner-get-build-cache (PROJ-ROOT)
   "Retrieve the build folder for PROJ-ROOT.  Return nil if it does not exist."
-  (alist-get (intern PROJ-ROOT) taskrunner-cmake-build-cache nil))
+  (alist-get (intern PROJ-ROOT) taskrunner-build-cache nil))
 
 (defun taskrunner-invalidate-cmake-cache ()
   "Delete the entire cmake cache."
-  (setq taskrunner-cmake-build-cache '()))
+  (setq taskrunner-build-cache '()))
 
 (defun taskrunner-get-make-targets (DIR MAKEFILE-NAME HIDDEN)
   "Find all makefile targets from file called MAKEFILE-NAME located in DIR.
@@ -137,9 +137,9 @@ If HIDDEN is non-nil then include targets which start with _."
   "Retrieve all ninja tasks from directory DIR."
   (let ((default-directory DIR)
         (targets '()))
-    (call-process "ninja" nil "*taskrunner-ninja-task-buffer*" nil "-t" "targets")
+    (call-process "ninja" nil (taskrunner--make-task-buff-name "ninja") nil "-t" "targets")
     (with-temp-buffer
-      (set-buffer "*taskrunner-ninja-task-buffer*")
+      (set-buffer (taskrunner--make-task-buff-name "ninja"))
       (goto-char (point-min))
       (dolist (elem (split-string (buffer-string) "\n"))
         (push (concat "NINJA" " " (car (split-string elem ":"))) targets))
