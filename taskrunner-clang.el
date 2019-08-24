@@ -148,7 +148,7 @@ If HIDDEN is non-nil then include targets which start with _."
       (pop targets))
     targets))
 
-(defun taskrunner-meson-get-tasks (ROOT)
+(defun taskrunner-get-meson-tasks (ROOT)
   "Retrieve all ninja tasks from a meson project in directory ROOT."
   (let ((dir-contents (directory-files ROOT))
         (build-dir-name) ;; Build folder name

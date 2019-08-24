@@ -424,11 +424,14 @@ updating the cache."
         (setq tasks (append tasks (taskrunner-get-cargo-make-tasks DIR))))
 
     (cond ((member "CMakeLists.txt" work-dir-files)
-           (setq tasks (append (taskrunner-cmake-find-build-folder DIR)))
-           )
+           (setq tasks (append tasks (taskrunner-cmake-find-build-folder DIR))))
           ((taskrunner-file-in-source-folder-p DIR work-dir-files "CMakeLists.txt")
-           (setq tasks (append (taskrunner-cmake-find-build-folder DIR)))
-           ))
+           (setq tasks (append tasks (taskrunner-cmake-find-build-folder DIR)))))
+
+    (cond ((member "meson.build" work-dir-files)
+           (setq tasks (append tasks (taskrunner-get-meson-tasks DIR))))
+          ((taskrunner-file-in-source-folder-p DIR work-dir-files "meson.build")
+           (setq tasks (append tasks (taskrunner-get-meson-tasks DIR)))))
 
     ;; There should only be one makefile in the directory only look for one type
     ;; of name.
