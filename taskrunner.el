@@ -31,6 +31,7 @@
 ;; Install these required packages:
 
 ;; projectile
+;; async
 ;; And one or more of these:
 ;; - ivy-taskrunner <- Uses ivy as a frontend
 ;; - helm-taskrunner <- Uses helm as a frontend
@@ -80,6 +81,8 @@
 ;;;; Requirements
 
 (require 'projectile)
+(require 'async)
+(require 'cl-lib)
 (require 'taskrunner-clang)
 (require 'taskrunner-web)
 (require 'taskrunner-java)

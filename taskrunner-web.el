@@ -2,6 +2,8 @@
 ;; Copyright (C) 2019 Yavor Konstantinov
 
 ;;; Commentary:
+;; This file adds support for taskrunners which are mainly used for
+;; javascript/web projects.
 ;; Support included for:
 ;; - yarn/npm
 ;; - gulp
@@ -14,6 +16,7 @@
 
 (require 'json)
 (require 'subr-x)
+(require 'cl-lib)
 
 ;;;; Variables
 
@@ -67,9 +70,9 @@ where PM is the package manager used."
   (let* ((package-path (expand-file-name "package.json" DIR))
          (package-json-scripts (assoc 'scripts (json-read-file package-path)))
          (task-prefix (taskrunner--yarn-or-npm DIR)))
-    (map 'list (lambda (elem)
-                 (concat task-prefix " " (symbol-name (car elem))))
-         (cdr package-json-scripts))
+    (cl-map 'list (lambda (elem)
+                    (concat task-prefix " " (symbol-name (car elem))))
+            (cdr package-json-scripts))
     )
   )
 
@@ -78,9 +81,9 @@ where PM is the package manager used."
 This function returns a list of the form:
 \(\"GULP TASK1\" \"GULP TASK2\"...)"
   (let ((default-directory DIR))
-    (butlast (map 'list (lambda (elem)
-                          (concat "GULP" " " elem))
-                  (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n")))))
+    (butlast (cl-map 'list (lambda (elem)
+                             (concat "GULP" " " elem))
+                     (split-string (shell-command-to-string taskrunner--js-gulp-tasks-command) "\n")))))
 
 (defun taskrunner--get-grunt-tasks-from-buffer ()
   "Retrieve the grunt tasks from the current buffer and return them as a list.
@@ -92,9 +95,9 @@ This function is not meant to be used externally.  Use
         (end (re-search-forward "^$" nil t)))
     (when beg
       (narrow-to-region beg end)
-      (map 'list (lambda (elem)
-                   (concat "GRUNT" " " (car (split-string (string-trim elem) " "))))
-           (split-string (buffer-string) "\n")))
+      (cl-map 'list (lambda (elem)
+                      (concat "GRUNT" " " (car (split-string (string-trim elem) " "))))
+              (split-string (buffer-string) "\n")))
     )
   )
 
@@ -117,10 +120,10 @@ This function returns a list of the form:
 This function returns a list of the form:
 \(\"JAKE TASK1\" \"JAKE TASK2\"...)"
   (let ((default-directory DIR))
-    (map 'list (lambda (elem)
-                 (concat "JAKE" " " (cadr (split-string elem " "))))
-         ;; Splitting the Jake tasks on \n leads to one element being empty so it must be removed
-         (remove "" (split-string (shell-command-to-string taskrunner--jake-tasks-command) "\n")))))
+    (cl-map 'list (lambda (elem)
+                    (concat "JAKE" " " (cadr (split-string elem " "))))
+            ;; Splitting the Jake tasks on \n leads to one element being empty so it must be removed
+            (remove "" (split-string (shell-command-to-string taskrunner--jake-tasks-command) "\n")))))
 
 (provide 'taskrunner-web)
 ;;; taskrunner-web.el ends here
