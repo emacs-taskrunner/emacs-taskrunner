@@ -128,5 +128,40 @@ If HIDDEN is non-nil then include targets which start with _."
     )
   )
 
+(defun taskrunner-get-ninja-tasks (DIR)
+  "Retrieve all ninja tasks from directory DIR."
+  (let ((default-directory DIR)
+        (targets '()))
+    (call-process "ninja" nil "*taskrunner-ninja-task-buffer*" nil "-t" "targets")
+    (with-temp-buffer
+      (set-buffer "*taskrunner-ninja-task-buffer*")
+      (goto-char (point-min))
+      (dolist (elem (split-string (buffer-string) "\n"))
+        (push (concat "NINJA" " " (car (split-string elem ":"))) targets))
+      (kill-current-buffer))
+    (when targets
+      (pop targets))
+    targets))
+
+(defun taskrunner-meson-get-tasks (ROOT)
+  "Retrieve all ninja tasks from a meson project in directory ROOT."
+  (let ((dir-contents (directory-files ROOT))
+        (build-dir-name) ;; Build folder name
+        (build-path) ;; Absolute path to build folder
+        (targets '())
+        (found-flag nil)
+        (i 0))
+    (while (and
+            (not found-flag)
+            (<= i (length taskrunner-cmake-build-dir-list)))
+
+      (when (member (elt taskrunner-cmake-build-dir-list i) dir-contents)
+        (setq build-dir-name (elt taskrunner-cmake-build-dir-list i))
+        (setq found-flag t))
+      (setq i (1+ i)))
+    (when found-flag
+      (setq build-path (expand-file-name build-dir-name ROOT))
+      (setq targets (taskrunner-get-ninja-tasks build-path)))))
+
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here
