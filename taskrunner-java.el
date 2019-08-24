@@ -27,16 +27,6 @@
   :type 'list
   :group 'taskrunner)
 
-(defcustom taskrunner-gradle-tasks-buffer-name "*taskrunner-gradle-tasks*"
-  "Name of the buffer used for parsing the tasks from the output of gradle."
-  :type 'string
-  :group 'taskrunner)
-
-(defcustom taskrunner-ant-tasks-buffer-name "*taskrunner-ant-tasks*"
-  "Name of the buffer used for parsing tasks from the output of ant."
-  :type 'string
-  :group 'taskrunner)
-
 ;;;; Functions
 
 ;; Each block contains several tasks which can be executed.
@@ -74,17 +64,16 @@
 This function returns a list of the form:
 \(\"GRADLE TASK1\" \"GRADLE TASK2\"...)"
   (let ((default-directory dir)
-        (buff (get-buffer-create taskrunner-gradle-tasks-buffer-name))
         (gradle-tasks '()))
-    (call-process "gradle"  nil taskrunner-gradle-tasks-buffer-name  nil "tasks")
+    (call-process "gradle"  nil (taskrunner--make-task-buff-name "gradle")  nil "tasks")
     (with-temp-buffer
-      (set-buffer buff)
+      (set-buffer (taskrunner--make-task-buff-name "gradle"))
       (dolist (curr-regex taskrunner-gradle-heading-regexps)
         (let ((tasks-retrieved (taskrunner--retrieve-gradle-heading-tasks curr-regex)))
           (when tasks-retrieved
             (setq gradle-tasks (append gradle-tasks tasks-retrieved))
             )))
-      (kill-buffer buff))
+      (kill-current-buffer))
     ;; Return the tasks acquired
     gradle-tasks))
 
@@ -155,11 +144,10 @@ If you need to retrieve tasks from ant, use the function
   "Retrieve the ant tasks for the project in directory DIR.
 This function returns a list of the form:
 \(\"ANT TASK1\" \"ANT TASK2\"...)"
-  (let ((default-directory DIR)
-        (buff (get-buffer-create taskrunner-ant-tasks-buffer-name)))
-    (call-process "ant"  nil taskrunner-ant-tasks-buffer-name  nil "-verbose" "-p")
+  (let ((default-directory DIR))
+    (call-process "ant"  nil (taskrunner--make-task-buff-name "ant")  nil "-verbose" "-p")
     (with-temp-buffer
-      (set-buffer buff)
+      (set-buffer (taskrunner--make-task-buff-name "ant"))
       (taskrunner--retrieve-ant-tasks-from-buffer))))
 
 (provide 'taskrunner-java)

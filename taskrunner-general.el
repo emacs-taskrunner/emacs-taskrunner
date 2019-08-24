@@ -9,6 +9,7 @@
 
 ;;;; Required
 (require 'projectile)
+(require 'cl-lib)
 
 ;;;; Variables
 (defcustom taskrunner-go-task-bin-path "~/go/bin/"
@@ -26,43 +27,6 @@
   :group 'taskrunner
   :type 'string)
 
-(defcustom taskrunner-go-task-buffer-name "*taskrunner-go-task-tasks*"
-  "Temporary buffer name used to collect all targets for go task.
-The process output of the command `task -l' is loaded in here."
-  :group 'taskrunner
-  :type 'string)
-
-(defcustom taskrunner-mage-task-buffer-name "*taskrunner-mage-tasks*"
-  "Temporary buffer name used to collect all targets for mage.
-The process output of the command `mage -l' is loaded in here."
-  :group 'taskrunner
-  :type 'string)
-
-(defcustom taskrunner-doit-task-buffer-name "*taskrunner-doit-tasks*"
-  "Temporary buffer name used to collect all targets for doit.
-The process output of the command `doit list' is loaded in here."
-  :group 'taskrunner
-  :type 'string)
-
-(defcustom taskrunner-just-task-buffer-name "*taskrunner-just-task-tasks*"
-  "Temporary buffer name used to collect all targets for just.
-The process output of the command `just --list' is loaded in here."
-  :group 'taskrunner
-  :type 'string)
-
-(defcustom taskrunner-mask-task-buffer-name "*taskrunner-mask-tasks*"
-  "Temporary buffer name used to collect all targets for mask.
-The process output of the command `mast --help' is loaded in here."
-  :group 'taskrunner
-  :type 'string)
-
-(defcustom taskrunner-cargo-make-task-buffer-name "*taskrunner-cargo-make-tasks*"
-  "Temporary buffer name used to collect all targets for cargo-make.
-The process output of the command `cargo make --list-all-steps'
-is loaded in here."
-  :group 'taskrunner
-  :type 'string)
-
 ;;;; Functions
 (defun taskrunner--get-go-tasks-from-buffer ()
   "Retrieve all go tasks from the currently visited buffer.
@@ -77,9 +41,9 @@ The tasks are returned in the form:
       (widen))
     (kill-current-buffer)
     (if targets
-        (map 'list (lambda (elem)
-                     (concat "TASK" " " elem))
-             targets)
+        (cl-map 'list (lambda (elem)
+                        (concat "TASK" " " elem))
+                targets)
       targets)))
 
 (defun taskrunner-get-go-task-tasks (DIR)
@@ -88,9 +52,9 @@ This function returns a list of the form:
 \(\"TASK TASK1\" \"TASK TASK2\"...)"
   (let ((default-directory DIR)
         (exec-path (cons taskrunner-go-task-bin-path exec-path)))
-    (call-process "task" nil taskrunner-go-task-buffer-name nil "-l")
+    (call-process "task" nil (taskrunner--make-task-buff-name "go-task") nil "-l")
     (with-temp-buffer
-      (set-buffer taskrunner-go-task-buffer-name)
+      (set-buffer (taskrunner--make-task-buff-name "go-task"))
       (taskrunner--get-go-tasks-from-buffer))))
 
 (defun taskrunner--get-mage-tasks-from-buffer ()
@@ -106,9 +70,9 @@ This function returns a list of the form:
         (if (null (car targets))
             (pop targets))))
     (kill-current-buffer)
-    (map 'list (lambda (elem)
-                 (concat "MAGE" " " elem))
-         targets)))
+    (cl-map 'list (lambda (elem)
+                    (concat "MAGE" " " elem))
+            targets)))
 
 (defun taskrunner-get-mage-tasks (DIR)
   "Retrieve the mage tasks for the project in directory DIR.
@@ -116,9 +80,9 @@ This function returns a list of the form:
 \(\"MAGE TASK1\" \"MAGE TASK2\"...)"
   (let ((default-directory DIR)
         (exec-path (cons taskrunner-mage-bin-path exec-path)))
-    (call-process "mage" nil taskrunner-mage-task-buffer-name nil "-l")
+    (call-process "mage" nil (taskrunner--make-task-buff-name "mage") nil "-l")
     (with-temp-buffer
-      (set-buffer taskrunner-mage-task-buffer-name)
+      (set-buffer (taskrunner--make-task-buff-name "mage"))
       (taskrunner--get-mage-tasks-from-buffer))))
 
 (defun taskrunner--get-doit-tasks-from-buffer ()
@@ -141,9 +105,9 @@ This function returns a list of the form:
 \(\"DOIT TASK1\" \"DOIT TASK2\"...)"
   (let ((default-directory DIR)
         (exec-path (cons taskrunner-doit-bin-path exec-path)))
-    (call-process "doit" nil taskrunner-doit-task-buffer-name nil "list")
+    (call-process "doit" nil (taskrunner--make-task-buff-name "doit") nil "list")
     (with-temp-buffer
-      (set-buffer taskrunner-doit-task-buffer-name)
+      (set-buffer (taskrunner--make-task-buff-name "doit"))
       (taskrunner--get-doit-tasks-from-buffer))))
 
 
@@ -153,9 +117,9 @@ This function returns a list of the form:
   (let ((targets '()))
     (when (search-forward-regexp "Available recipes:\n" nil t)
       (narrow-to-region (point-at-bol) (point-max))
-      (setq targets (map 'list (lambda (elem)
-                                 (concat "JUST" " " (car (split-string elem " " t))))
-                         (split-string (buffer-string) "\n")))
+      (setq targets (cl-map 'list (lambda (elem)
+                                    (concat "JUST" " " (car (split-string elem " " t))))
+                            (split-string (buffer-string) "\n")))
       (kill-current-buffer)
       (if targets
           (butlast targets)
@@ -166,9 +130,9 @@ This function returns a list of the form:
 This function returns a list of the form:
 \(\"JUST TASK1\" \"JUST TASK2\"...)"
   (let ((default-directory DIR))
-    (call-process "just" nil taskrunner-just-task-buffer-name nil "--list")
+    (call-process "just" nil (taskrunner--make-task-buff-name "just") nil "--list")
     (with-temp-buffer
-      (set-buffer taskrunner-just-task-buffer-name)
+      (set-buffer (taskrunner--make-task-buff-name "just"))
       (taskrunner--get-just-tasks-from-buffer))))
 
 (defun taskrunner--get-mask-tasks-from-buffer ()
@@ -177,10 +141,10 @@ This function returns a list of the form:
   (let ((targets '()))
     (when (search-forward-regexp "SUBCOMMANDS:\n" nil t)
       (narrow-to-region (point-at-bol) (point-max))
-      (setq targets (map 'list
-                         (lambda (elem)
-                           (concat "MASK" " " (car (split-string elem " " t))))
-                         (split-string (buffer-string) "\n")))
+      (setq targets (cl-map 'list
+                            (lambda (elem)
+                              (concat "MASK" " " (car (split-string elem " " t))))
+                            (split-string (buffer-string) "\n")))
       (kill-current-buffer)
       (butlast targets))))
 
@@ -189,9 +153,9 @@ This function returns a list of the form:
 This function returns a list of the form:
 \(\"MASK TASK1\" \"MASK TASK2\"...)"
   (let ((default-directory DIR))
-    (call-process "mask" nil taskrunner-mask-task-buffer-name nil "--help")
+    (call-process "mask" nil (taskrunner--make-task-buff-name "mask") nil "--help")
     (with-temp-buffer
-      (set-buffer taskrunner-mask-task-buffer-name)
+      (set-buffer (taskrunner--make-task-buff-name "mask"))
       (taskrunner--get-mask-tasks-from-buffer))))
 
 (defun taskrunner--get-cargo-make-tasks-from-buffer ()
@@ -217,9 +181,9 @@ This function returns a list of the form:
 This function returns a list of the form:
 \(\"CARGO-MAKE TASK1\" \"CARGO-MAKE TASK2\"...)"
   (let ((default-directory DIR))
-    (call-process "cargo" nil taskrunner-cargo-make-task-buffer-name nil "make" "--list-all-steps")
+    (call-process "cargo" nil (taskrunner--make-task-buff-name "cargo-make") nil "make" "--list-all-steps")
     (with-temp-buffer
-      (set-buffer taskrunner-cargo-make-task-buffer-name)
+      (set-buffer (taskrunner--make-task-buff-name "cargo-make"))
       (taskrunner--get-cargo-make-tasks-from-buffer))))
 
 (provide 'taskrunner-general)

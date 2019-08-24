@@ -8,11 +8,6 @@
 
 ;;;; Variables
 
-(defcustom taskrunner-leiningen-buffer-name "*taskrunner-leiningen-tasks*"
-  "Name of the buffer temporarily created to be used for retrieving leiningen tasks."
-  :group 'taskrunner
-  :type 'string)
-
 (defconst taskrunner-leiningen-task-section-header-regexp
   "Several tasks are available:\n"
   "Regexp used to match the start of the tasks output from leiningen.")
@@ -34,13 +29,12 @@
 This function returns a list of the form:
 \(\"LEIN TASK1\" \"LEIN TASK2\"...)"
   (let ((default-directory DIR)
-        (buff (get-buffer-create taskrunner-leiningen-buffer-name))
         ;;; Store the elixir tasks retrieved
         (lein-tasks))
 
-    (call-process "lein" nil taskrunner-leiningen-buffer-name nil "-h")
+    (call-process "lein" nil (taskrunner--make-task-buff-name "leiningen") nil "-h")
     (with-temp-buffer
-      (set-buffer buff)
+      (set-buffer (taskrunner--make-task-buff-name "leiningen"))
       (goto-char (point-min))
       (setq lein-tasks (taskrunner--get-leiningen-tasks-from-buffer))
       (kill-current-buffer))

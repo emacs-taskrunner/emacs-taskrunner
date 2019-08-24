@@ -7,12 +7,6 @@
 ;;;; Code:
 
 (require 'cl-lib)
-;;;; Variables
-
-(defcustom taskrunner-mix-buffer-name "*taskrunner-elixir-tasks*"
-  "Name of the buffer temporarily created to be used for retrieving mix tasks."
-  :group 'taskrunner
-  :type 'string)
 
 ;;;; Functions
 
@@ -43,12 +37,11 @@
 This function returns a list of the form:
 \(\"MIX TASK1\" \"MIX TASK2\"...)"
   (let ((default-directory DIR)
-        (buff (get-buffer-create taskrunner-mix-buffer-name))
         (elixir-tasks) ;; Store the elixir tasks retrieved
         )
-    (call-process "mix" nil taskrunner-mix-buffer-name nil "help")
+    (call-process "mix" nil (taskrunner--make-task-buff-name "mix") nil "help")
     (with-temp-buffer
-      (set-buffer buff)
+      (set-buffer (taskrunner--make-task-buff-name "mix"))
       (goto-char (point-min))
       ;; Use regexp to find start of region since 'mix help' can sometimes show
       ;; errors in the output and we do not want to match those
