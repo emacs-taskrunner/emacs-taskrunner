@@ -112,6 +112,10 @@ It is an alist of the form (project-root . list-of-tasks)")
   "Indicates whether or not the cache file has been read.
 Do not edit unless you want to reread the cache.")
 
+(defvar taskrunner--tempdir nil
+  "Used to hold the working directory argument for usage in the async package.
+Do not edit this manually!")
+
 (defconst taskrunner--cache-file-header-warning
   ";;This file is generated automatically. Please do not edit by hand!\n"
   "Warning inserted at the top of the tasks cache file to indicate not to edit it.")
@@ -427,7 +431,7 @@ updating the cache."
     ;;; Return the tasks collected
     tasks))
 
-(defun taskrunner-get-tasks-from-cache-sync (&optional DIR)
+(defun taskrunner-get-tasks-sync (&optional DIR)
   "Retrieve the cached tasks from the directory DIR or the current project.
 If the project does not have any tasks cached then collect all tasks and update
 the cache.  If the tasks exist then simply return them.  The tasks returned are
@@ -457,28 +461,47 @@ Warning: This function is meant to be used synchronously."
     ;; Return the tasks
     proj-tasks))
 
-(defun taskrunner-get-tasks-from-cache-async (&optional DIR)
-  "Retrieve the tasks for the project asynchronously.
-If DIR is non-nil then look for tasks in that directory.
-Warning: This function is only meant to be used along with the `async' package.
-It returns a list of the form:
-\(status project-root project-tasks)
-where status represents whether or not the tasks need to be added to the cache,
-project-root is the root in which the tasks were looked for and project-tasks
-is a list of all the tasks in that directory."
-  (let* ((proj-root (if DIR
-                        DIR
-                      (projectile-project-root)))
-         (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache))
-         (cache-status nil))
-    ;; If the tasks do not exist then collect them and set cache-status.
-    ;; cache-status can be t if the project is already cached or nil if it had
-    ;; to be retrieved.
-    (if (null proj-tasks)
-        (progn (setq proj-tasks (taskrunner-collect-tasks proj-root))
-               (setq cache-status nil))
-      (setq cache-status t))
-    (list cache-status proj-root proj-tasks)))
+
+(defun taskrunner-get-tasks-async (FUNC &optional DIR)
+  "Retrieve the tasks from the currently visited project asynchronously.
+The resulting list of tasks which may be empty is then passed to
+the function FUNC.  This function must accept only one argument
+which will be a list of strings consisting of taskrunner/build
+systems and target name.  Example: \(\"MAKE target1\" \"MAKE
+target2\"...)
+
+If DIR is non-nil then tasks are gathered from that directory."
+  (setq taskrunner--tempdir DIR)
+  (async-start
+   `(lambda ()
+      ;; inject the load path so we can find taskrunner
+      ,(async-inject-variables "\\`load-path\\'")
+      ;; Inject all variables from the taskrunner package
+      ,(async-inject-variables "taskrunner-.*")
+      (require 'cl)
+      (require 'taskrunner)
+      (let* ((proj-root (if taskrunner--tempdir
+                            taskrunner--tempdir
+                          (projectile-project-root)))
+             (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache))
+             (cache-status nil))
+        ;; If the tasks do not exist then collect them and set cache-status.
+        ;; cache-status can be t if the project is already cached or nil if it had
+        ;; to be retrieved.
+        (if (null proj-tasks)
+            (progn (setq proj-tasks (taskrunner-collect-tasks proj-root))
+                   (setq cache-status nil))
+          (setq cache-status t))
+        (list cache-status proj-root proj-tasks))
+      )
+   (lambda (TARGETS)
+     (let ((cache-status (car TARGETS))
+           (proj-dir (cadr TARGETS))
+           (proj-tasks (caddr TARGETS)))
+       ;; If the tasks are not cached then add them to the cache
+       (unless cache-status
+         (taskrunner-add-to-tasks-cache proj-dir proj-tasks))
+       (funcall FUNC proj-tasks)))))
 
 (defun taskrunner-project-cached-p (&optional DIR)
   "Check if either the current project or the one in directory DIR are cached.
