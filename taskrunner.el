@@ -130,6 +130,10 @@ Do not edit this manually!")
 
 ;; Functions:
 
+(defmacro taskrunner--make-task-buff-name (TASKRUNNER)
+  "Create a buffer name used to retrieve the tasks for TASKRUNNER."
+  `(concat "*taskrunner-" ,TASKRUNNER "-tasks-buffer*"))
+
 (defun taskrunner--narrow-to-line ()
   "Narrow to the line entire line that the point lies on."
   (narrow-to-region (point-at-bol)

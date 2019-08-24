@@ -30,6 +30,7 @@ systems/frontends listed below.
 - [X] rake
 - [X] Make
 - [X] CMake
+- [X] Meson/Ninja
 - [X] [[https://github.com/go-task/task][go-task]] 
 - [X] [[https://github.com/magefile/mage][mage]] 
 - [X] [[https://github.com/pydoit/doit][doit]] 
@@ -50,7 +51,6 @@ systems/frontends listed below.
 - [ ] [[https://waf.io/][waf]] 
 - [ ] [[https://github.com/pantsbuild/pants][pants]] 
 - [ ] tasks.json(VSCode)
-- [ ] Meson
 - [ ] Ninja
 - [ ] sbt
 - [ ] Buck
