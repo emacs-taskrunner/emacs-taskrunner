@@ -165,16 +165,33 @@ use the project root for the currently visited buffer."
   "Read the task cache file and initialize the task caches with its contents."
   (with-temp-buffer
     (let ((cache-file-path (expand-file-name "taskrunner-tasks.eld" user-emacs-directory))
-          (tasks)
-          )
+          (file-tasks))
       (when (file-exists-p cache-file-path)
         (with-temp-buffer
           (insert-file-contents cache-file-path)
-          (setq tasks (car (read-from-string (buffer-string))))
+          (setq file-tasks (car (read-from-string (buffer-string))))
           ;; Load all the caches with the retrieved info
-          (setq taskrunner-tasks-cache (nth 0 tasks))
-          (setq taskrunner-last-command-cache(nth 1 tasks))
-          (setq taskrunner-cmake-build-cache (nth 2 tasks)))))))
+          (setq taskrunner-tasks-cache (nth 0 file-tasks))
+          (setq taskrunner-last-command-cache(nth 1 file-tasks))
+          (setq taskrunner-cmake-build-cache (nth 2 file-tasks)))))))
+
+(defun taskrunner--format-list-for-write (LIST)
+  "Format the alist LIST for writing.
+LIST should have the form of (SYMBOL STRING STRING...STRING).
+This function will surround each STRING with another set of
+double quotes.  This is done so that when the file is read back,
+the strings are still surrounded with double quotes."
+  (if LIST
+      (let ((formatted-list '()))
+        (dolist (elem LIST)
+          (push  (cl-map 'list (lambda (elem)
+                                 (if (stringp elem)
+                                     (concat "\"" elem "\"")
+                                   elem))
+                         elem)
+                 formatted-list))
+        formatted-list)
+    '()))
 
 (defun taskrunner--write-to-cache-file (TASKS)
   "Write TASKS to the taskrunner tasks cache file."
@@ -184,9 +201,9 @@ use the project root for the currently visited buffer."
 
 (defun taskrunner--save-tasks-to-cache-file ()
   "Save all tasks in the cache to the cache file in Emacs user directory."
-  (taskrunner--write-to-cache-file (list taskrunner-tasks-cache
-                                         taskrunner-last-command-cache
-                                         taskrunner-cmake-build-cache)))
+  (taskrunner--write-to-cache-file (list (taskrunner--format-list-for-write taskrunner-tasks-cache)
+                                         (taskrunner--format-list-for-write taskrunner-last-command-cache)
+                                         (taskrunner--format-list-for-write taskrunner-cmake-build-cache))))
 
 (defmacro taskrunner-buffer-matching-regexp (REGEXP DIRECTORY FILE-LIST KEY MATCH-LIST)
   "Create a list containing all file names in FILE-LIST which match REGEXP.
