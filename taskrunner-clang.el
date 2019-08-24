@@ -10,6 +10,7 @@
 ;;;; Requirements
 
 (require 'projectile)
+(require 'cl-lib)
 
 ;;;; Code:
 
@@ -46,7 +47,7 @@ It is an alist of the form (project-root . build-folder)")
 
 (defun taskrunner-add-to-build-cache (PROJ-ROOT BUILD-DIR)
   "Add BUILD-DIR as the build directory for make in PROJ-ROOT."
-  (assoc-delete-all (intern PROJ-ROOT) taskrunner-cmake-build-cache)
+  (setq taskrunner-cmake-build-cache (assoc-delete-all (intern PROJ-ROOT) taskrunner-cmake-build-cache))
   (push (list (intern PROJ-ROOT) BUILD-DIR) taskrunner-cmake-build-cache))
 
 (defun taskrunner-get-build-cache (PROJ-ROOT)
@@ -90,8 +91,8 @@ If HIDDEN is non-nil then include targets which start with _."
         (widen)
         )
       )
-    (map 'list (lambda (elem)
-                 (concat "MAKE" " " elem)) targets)
+    (cl-map 'list (lambda (elem)
+                    (concat "MAKE" " " elem)) targets)
     )
   )
 
@@ -126,9 +127,7 @@ If HIDDEN is non-nil then include targets which start with _."
       )
      )
     (taskrunner-add-to-build-cache ROOT build-path)
-    targets
-    )
-  )
+    targets))
 
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here

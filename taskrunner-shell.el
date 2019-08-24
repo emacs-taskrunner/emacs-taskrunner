@@ -8,6 +8,7 @@
 ;; - Zsh
 
 ;;;; Code:
+(require 'cl-lib)
 
 ;;;; Functions
 
@@ -17,9 +18,9 @@ All names are prefixed with the string provided by PREFIX."
   (if (directory-name-p DIR)
       (progn
         (let ((shell-scripts (directory-files DIR nil FILETYPE-REGEXP)))
-          (map 'list (lambda (elem)
-                       (concat PREFIX " " elem))
-               shell-scripts)))))
+          (cl-map 'list (lambda (elem)
+                          (concat PREFIX " " elem))
+                  shell-scripts)))))
 
 (defun taskrunner-get-bash-scripts (DIR)
   "Retrieve the rake tasks for the project in directory DIR.

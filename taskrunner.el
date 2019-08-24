@@ -5,7 +5,7 @@
 ;; Author: Yavor Konstantinov <ykonstantinov1 AT gmail DOT com>
 ;; URL: https://github.com/emacs-taskrunner/emacs-taskrunner
 ;; Version: 0.5
-;; Package-Requires: ((emacs "24"))
+;; Package-Requires: ((emacs "24.4"))
 ;; Keywords: build-system taskrunner build task-runner tasks
 
 ;; This file is not part of GNU Emacs.
@@ -32,6 +32,7 @@
 
 ;; projectile
 ;; async
+;; cl-lib
 ;; And one or more of these:
 ;; - ivy-taskrunner <- Uses ivy as a frontend
 ;; - helm-taskrunner <- Uses helm as a frontend
@@ -545,7 +546,8 @@ containing the new tasks."
     (taskrunner--save-tasks-to-cache-file)))
 
 (defun taskrunner-refresh-cache-async (FUNC &optional DIR)
-  "Retrieve all tasks for project in DIR or the current project and set cache.
+  "Retrieve all tasks asynchronously and pass them to FUNC.
+If DIR is non-nil then refresh the tasks for the project in that directory.
 If there were tasks previously loaded then remove them, retrieve all tasks
 again and set the corresponding project to the new list.  Return a list
 containing the new tasks."

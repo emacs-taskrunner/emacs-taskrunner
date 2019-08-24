@@ -6,6 +6,7 @@
 
 ;;;; Code:
 
+(require 'cl-lib)
 ;;;; Variables
 
 (defcustom taskrunner-mix-buffer-name "*taskrunner-elixir-tasks*"
@@ -17,23 +18,23 @@
 
 (defun taskrunner--get-elixir-tasks-from-buffer ()
   "Retrieve all mix tasks from the currently visited buffer."
-  (map 'list (lambda (elem)
-               (let ((split-task-line (split-string elem " ")))
-                 (cond
-                  ;; Match the last line of mix 'iex -S mix'
-                  ((string-match "^iex" elem)
-                   (concat "MIX" " " (car (split-string elem "#"))))
-                  ;; Match the first line 'mix #some_comment'
-                  ;; This is presented as MIX mix in the output
-                  ((string-match "^mix[[:space:]]+#" elem)
-                   (concat "MIX" " " "mix"))
-                  ;; Match all other regular lines
-                  (t
-                   (concat "MIX" " " (cadr split-task-line)))
+  (cl-map 'list (lambda (elem)
+                  (let ((split-task-line (split-string elem " ")))
+                    (cond
+                     ;; Match the last line of mix 'iex -S mix'
+                     ((string-match "^iex" elem)
+                      (concat "MIX" " " (car (split-string elem "#"))))
+                     ;; Match the first line 'mix #some_comment'
+                     ;; This is presented as MIX mix in the output
+                     ((string-match "^mix[[:space:]]+#" elem)
+                      (concat "MIX" " " "mix"))
+                     ;; Match all other regular lines
+                     (t
+                      (concat "MIX" " " (cadr split-task-line)))
+                     )
+                    )
                   )
-                 )
-               )
-       (split-string (buffer-string) "\n"))
+          (split-string (buffer-string) "\n"))
   )
 
 

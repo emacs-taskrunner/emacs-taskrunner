@@ -8,6 +8,8 @@
 ;; - Gradle
 
 ;;;; Code:
+(require 'cl-lib)
+(require 'subr-x)
 
 ;;;; Variables
 
@@ -63,9 +65,9 @@
                           (forward-line -1)
                           (line-end-position)))
 
-      (map 'list (lambda (elem)
-                   (concat "GRADLE" " " (car (split-string elem " "))))
-           (split-string (buffer-string) "\n")))))
+      (cl-map 'list (lambda (elem)
+                      (concat "GRADLE" " " (car (split-string elem " "))))
+              (split-string (buffer-string) "\n")))))
 
 (defun taskrunner-get-gradle-tasks (dir)
   "Retrieve the gradle tasks for the project in directory DIR.
@@ -115,11 +117,11 @@ If you need to retrieve tasks from ant, use the function
                           (search-forward-regexp "Other targets:")
                           (forward-line -1)
                           (point-at-eol)))
-      (map 'list (lambda (elem)
-                   (if (not (string-equal elem ""))
-                       (push (concat "ANT" " "  (car (split-string (string-trim elem) " "))) ant-tasks)
-                     ))
-           (split-string (buffer-string) "\n"))
+      (cl-map 'list (lambda (elem)
+                      (if (not (string-equal elem ""))
+                          (push (concat "ANT" " "  (car (split-string (string-trim elem) " "))) ant-tasks)
+                        ))
+              (split-string (buffer-string) "\n"))
       (widen))
 
     ;; Look for the 'Other targets' section
@@ -140,10 +142,10 @@ If you need to retrieve tasks from ant, use the function
                             (goto-char (point-max))
                             (point-at-eol))
                           ))
-      (map 'list (lambda (elem)
-                   (if (not (string-equal elem ""))
-                       (push (concat "ANT" " "  (car (split-string (string-trim elem) " "))) ant-tasks)))
-           (split-string (buffer-string) "\n")))
+      (cl-map 'list (lambda (elem)
+                      (if (not (string-equal elem ""))
+                          (push (concat "ANT" " "  (car (split-string (string-trim elem) " "))) ant-tasks)))
+              (split-string (buffer-string) "\n")))
     (kill-current-buffer)
 
     ;; Return the tasks after killing buffer
