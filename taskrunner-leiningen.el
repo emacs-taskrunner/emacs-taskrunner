@@ -6,6 +6,8 @@
 
 ;;;; Code:
 
+;;;; Required
+(require 'cl-lib)
 ;;;; Variables
 
 (defconst taskrunner-leiningen-task-section-header-regexp
@@ -20,9 +22,9 @@
     (when beg
       (narrow-to-region beg
                         (search-forward-regexp "^$"))
-      (map 'list (lambda (elem)
-                   (concat "LEIN" " " (car (split-string elem " "))))
-           (split-string (buffer-string) "\n")))))
+      (cl-map 'list (lambda (elem)
+                      (concat "LEIN" " " (car (split-string elem " "))))
+              (split-string (buffer-string) "\n")))))
 
 (defun taskrunner-get-leiningen-tasks(DIR)
   "Retrieve the rake tasks for the project in directory DIR.
