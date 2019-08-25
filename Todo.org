@@ -3,11 +3,6 @@
 - [X] Add support for updating the cache
 - [X] Rework grunt tasks so they are retrieved synchronously for now(async later!)
 - [X] Add option to open build/task/target files(makefile, package.json, gruntfile...)
-- [ ] Create a generic function for startin processes whose output is used to
-  gather tasks to gather tasks
-- [ ] Refactor run-task function
-- [ ] Test support for custom CMake build directories
-- [ ] Add tests for some pre-selected repositories
-- [ ] Add proper documentation to all modules/files in project
-- [ ] Setup cask?
-- [ ] Add a CI pipeline for testing
+- [ ] Add a minor mode which gathers targets on projectile-project-switch
+- [ ] Create a set of functions which use threads
+- [ ] Add support for multiple build caches
