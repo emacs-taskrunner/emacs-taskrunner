@@ -112,6 +112,10 @@
   "A cache used to store the tasks retrieved.
 It is an alist of the form (project-root . list-of-tasks)")
 
+(defvar taskrunner-build-cache '()
+  "A cache used to store project build folders for retrieval.
+It is an alist of the form (project-root . build-folder)")
+
 (defvar taskrunner--cache-file-read nil
   "Indicates whether or not the cache file has been read.
 Do not edit unless you want to reread the cache.")
@@ -146,20 +150,35 @@ use the project root for the currently visited buffer."
   (let ((proj-dir (if DIR
                       (intern DIR)
                     (intern (projectile-project-root)))))
-    (alist-get proj-dir taskrunner-last-command-cache nil)))
-
-(defun taskrunner-add-to-tasks-cache (DIR TASKS)
-  "Add TASKS for project in directory DIR to the tasks cache."
-  (push (cons (intern DIR) TASKS) taskrunner-tasks-cache))
+    (assoc proj-dir taskrunner-last-command-cache)))
 
 (defun taskrunner-set-last-command-ran (ROOT DIR COMMAND)
   "Set the COMMAND ran in DIR to be the last command ran for project in ROOT."
   ;; Remove the the previous command if it exists. Assoc-delete-all does not
   ;; throw an error so it is safe
-  (let ((new-command-cache (assoc-delete-all (intern ROOT)
-                                             taskrunner-last-command-cache)))
+  (let ((new-command-cache (assq-delete-all (intern ROOT)
+                                            taskrunner-last-command-cache)))
     ;; Reset the cache with new command added
     (setq taskrunner-last-command-cache (push (list (intern ROOT) DIR COMMAND) new-command-cache))))
+
+(defun taskrunner-add-to-tasks-cache (DIR TASKS)
+  "Add TASKS for project in directory DIR to the tasks cache."
+  (setq taskrunner-tasks-cache (assq-delete-all (intern DIR)
+                                                taskrunner-tasks-cache))
+  (push (cons (intern DIR) TASKS) taskrunner-tasks-cache))
+
+(defun taskrunner-add-to-build-cache (PROJ-ROOT BUILD-DIR)
+  "Add BUILD-DIR as the build directory for make in PROJ-ROOT."
+  (setq taskrunner-build-cache (assq-delete-all (intern PROJ-ROOT) taskrunner-build-cache))
+  (push (list (intern PROJ-ROOT) BUILD-DIR) taskrunner-build-cache))
+
+(defun taskrunner-get-build-cache (PROJ-ROOT)
+  "Retrieve the build folder for PROJ-ROOT.  Return nil if it does not exist."
+  (assoc (intern PROJ-ROOT) taskrunner-build-cache))
+
+(defun taskrunner-invalidate-build-cache ()
+  "Invalidate the entire build cache."
+  (setq taskrunner-build-cache '()))
 
 (defun taskrunner-invalidate-tasks-cache ()
   "Invalidate the entire task cache."
@@ -488,7 +507,7 @@ Warning: This function runs synchronously and will block Emacs!"
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root)))
-         (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache)))
+         (proj-tasks (assoc (intern proj-root) taskrunner-tasks-cache)))
     ;; If the tasks do not exist, retrieve them first and then add to cache
     (if (not proj-tasks)
         (progn
@@ -514,7 +533,6 @@ If DIR is non-nil then tasks are gathered from that directory."
   ;; Read the cache file if it exists.
   ;; This is done only once at startup
   (unless taskrunner--cache-file-read
-    (message "TASKRUNNER: READ CACHE!")
     (taskrunner--read-cache-file)
     (setq taskrunner--cache-file-read t))
 
@@ -526,12 +544,12 @@ If DIR is non-nil then tasks are gathered from that directory."
       ,(async-inject-variables "\\`load-path\\'")
       ;; Inject all variables from the taskrunner package
       ,(async-inject-variables "taskrunner-.*")
-      (require 'cl)
+      (require 'cl-lib)
       (require 'taskrunner)
       (let* ((proj-root (if taskrunner--tempdir
                             taskrunner--tempdir
                           (projectile-project-root)))
-             (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache))
+             (proj-tasks (assoc (intern proj-root) taskrunner-tasks-cache))
              (cache-status nil))
         ;; If the tasks do not exist then collect them and set cache-status.
         ;; cache-status can be t if the project is already cached or nil if it had
@@ -572,7 +590,7 @@ containing the new tasks."
                       (projectile-project-root)))
          (proj-tasks (taskrunner-collect-tasks proj-root)))
     ;; remove old tasks if they exist
-    (assoc-delete-all (intern proj-root) taskrunner-tasks-cache)
+    (assq-delete-all (intern proj-root) taskrunner-tasks-cache)
     ;; Add new tasks
     (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
     ;; Write to the cache file when a new set of tasks is found
@@ -588,7 +606,7 @@ containing the new tasks."
                         DIR
                       (projectile-project-root))))
     ;; remove old tasks if they exist
-    (setq taskrunner-tasks-cache (assoc-delete-all (intern proj-root) taskrunner-tasks-cache))
+    (setq taskrunner-tasks-cache (assq-delete-all (intern proj-root) taskrunner-tasks-cache))
     (taskrunner-get-tasks-async FUNC)
     ))
 
@@ -602,42 +620,30 @@ containing the new tasks."
     (intern mode)
     (concat "*taskrunner-" TASKRUNNER "-" TASK "*" )))
 
-(defun taskrunner-run-task (TASK &optional DIR ASK)
+(defun taskrunner-run-task (TASK &optional DIR ASK USE-BUILD-CACHE)
   "Run command TASK in project root or directory DIR if provided.
-If ASK is non-nil then ask the user to supply extra arguments to the task to
-be ran."
+If ASK is non-nil then ask the user to supply extra arguments to
+the task to be ran.  If USE-BUILD-CACHE is non-nil then attempt
+to use the build directory for the project which is retrieved
+from the build cache."
   (let* ((default-directory (if DIR
                                 DIR
                               (projectile-project-root)))
          (taskrunner-program (downcase (car (split-string TASK " "))))
-         (command (cadr (split-string TASK " ")))
-         )
+         (task-name (cadr (split-string TASK " ")))
+         (command))
     (when ASK
-      (setq command
-            (read-string (concat "Args/Flags to pass to " taskrunner-program ": ")
-                         command)))
-    ;; Extra handling for npm/yarn which require the run keyword to be prepended
-    ;; to the command which is to be ran
-    (if (or (string-equal taskrunner-program "npm")
-            (string-equal taskrunner-program "yarn"))
-        (progn
-          (taskrunner-set-last-command-ran (projectile-project-root)
-                                           default-directory
-                                           (concat taskrunner-program " " command))
-          (compilation-start (concat taskrunner-program " " "run" " " command)
-                             t
-                             (taskrunner--generate-buffer-name taskrunner-program command)
-                             t))
-      (progn
-        (taskrunner-set-last-command-ran  (projectile-project-root)
-                                          default-directory
-                                          (concat taskrunner-program " " command))
-        (compilation-start (concat taskrunner-program " " command)
-                           t
-                           (taskrunner--generate-buffer-name taskrunner-program command)
-                           t)
-        )
-      )
+      (setq task-name (read-string (concat "Arguments to add to command: ")
+                                   task-name)))
+    ;; Special case handling for commands which use the build cache or whih need
+    ;; extra arguments provided to run a specific task
+    (cond ((string-equal "ninja" taskrunner-program))
+          ((string-equal "make" taskrunner-program))
+          ((string-equal "npm" taskrunner-program)
+           (setq command (concat taskrunner-program " " "run" " " task-name)))
+          ((string-equal "yarn" taskrunner-program)
+           (setq command (concat taskrunner-program " " "run" " " task-name)))
+          )
     )
   )
 

@@ -48,24 +48,9 @@
 CMake for either insource or outsource build and then call emacs-taskrunner again!"
   "Warning used to indicate that not build folder was found for CMake.")
 
-(defvar taskrunner-build-cache '()
-  "A cache used to store project build folders for retrieval.
-It is an alist of the form (project-root . build-folder)")
 
 ;;;; Functions
 
-(defun taskrunner-add-to-build-cache (PROJ-ROOT BUILD-DIR)
-  "Add BUILD-DIR as the build directory for make in PROJ-ROOT."
-  (setq taskrunner-build-cache (assoc-delete-all (intern PROJ-ROOT) taskrunner-build-cache))
-  (push (list (intern PROJ-ROOT) BUILD-DIR) taskrunner-build-cache))
-
-(defun taskrunner-get-build-cache (PROJ-ROOT)
-  "Retrieve the build folder for PROJ-ROOT.  Return nil if it does not exist."
-  (alist-get (intern PROJ-ROOT) taskrunner-build-cache nil))
-
-(defun taskrunner-invalidate-cmake-cache ()
-  "Delete the entire cmake cache."
-  (setq taskrunner-build-cache '()))
 
 (defun taskrunner-get-make-targets (DIR MAKEFILE-NAME HIDDEN)
   "Find all makefile targets from file called MAKEFILE-NAME located in DIR.
