@@ -5,7 +5,7 @@
 ;; Author: Yavor Konstantinov <ykonstantinov1 AT gmail DOT com>
 ;; URL: https://github.com/emacs-taskrunner/emacs-taskrunner
 ;; Version: 0.5
-;; Package-Requires: ((emacs "24.4"))
+;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: build-system taskrunner build task-runner tasks convenience
 
 ;; This file is not part of GNU Emacs.
@@ -150,7 +150,7 @@ use the project root for the currently visited buffer."
   (let ((proj-dir (if DIR
                       (intern DIR)
                     (intern (projectile-project-root)))))
-    (assoc proj-dir taskrunner-last-command-cache)))
+    (car-safe (alist-get proj-dir taskrunner-last-command-cache))))
 
 (defun taskrunner-set-last-command-ran (ROOT DIR COMMAND)
   "Set the COMMAND ran in DIR to be the last command ran for project in ROOT."
@@ -174,7 +174,7 @@ use the project root for the currently visited buffer."
 
 (defun taskrunner-get-build-cache (PROJ-ROOT)
   "Retrieve the build folder for PROJ-ROOT.  Return nil if it does not exist."
-  (assoc (intern PROJ-ROOT) taskrunner-build-cache))
+  (car-safe (alist-get (intern PROJ-ROOT) taskrunner-build-cache)))
 
 (defun taskrunner-invalidate-build-cache ()
   "Invalidate the entire build cache."
@@ -507,7 +507,7 @@ Warning: This function runs synchronously and will block Emacs!"
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root)))
-         (proj-tasks (assoc (intern proj-root) taskrunner-tasks-cache)))
+         (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache)))
     ;; If the tasks do not exist, retrieve them first and then add to cache
     (if (not proj-tasks)
         (progn
@@ -549,7 +549,7 @@ If DIR is non-nil then tasks are gathered from that directory."
       (let* ((proj-root (if taskrunner--tempdir
                             taskrunner--tempdir
                           (projectile-project-root)))
-             (proj-tasks (assoc (intern proj-root) taskrunner-tasks-cache))
+             (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache))
              (cache-status nil))
         ;; If the tasks do not exist then collect them and set cache-status.
         ;; cache-status can be t if the project is already cached or nil if it had
@@ -578,7 +578,7 @@ Return t or nil."
   (let ((proj-root (if DIR
                        (intern DIR)
                      (intern (projectile-project-root)))))
-    (if (assoc proj-root taskrunner-tasks-cache)
+    (if (alist-get proj-root taskrunner-tasks-cache)
         t
       nil)))
 
@@ -637,7 +637,7 @@ from the build cache."
     (when ASK
       (setq task-name (read-string (concat "Arguments to add to command: ")
                                    task-name)))
-    ;; Special case handling for commands which use the build cache or whih need
+    ;; Special case handling for commands which use the build cache or which need
     ;; extra arguments provided to run a specific task
     (cond ((string-equal "ninja" taskrunner-program)
            (when (and USE-BUILD-CACHE
@@ -659,8 +659,7 @@ from the build cache."
     ;; Add to last command cache(overwrites previous command)
     (taskrunner-set-last-command-ran (projectile-project-root) default-directory command)
 
-    (compilation-start command t (taskrunner--generate-buffer-name taskrunner-program t))
-    )
+    (compilation-start command t (taskrunner--generate-buffer-name taskrunner-program task-name) t))
   )
 
 (defun taskrunner-rerun-last-task (DIR)
