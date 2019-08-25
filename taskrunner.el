@@ -588,22 +588,16 @@ Return t or nil."
       nil)))
 
 (defun taskrunner-refresh-cache-sync (&optional DIR)
-  "Retrieve all tasks for project in DIR or the current project and set cache.
-If there were tasks previously loaded then remove them, retrieve all tasks
-again and set the corresponding project to the new list.  Return a list
-containing the new tasks."
+  "Retrieve all tasks for a project and update the tasks cache.
+If DIR is non-nil then the tasks are gathered from that folder,
+otherwise the project root is used.  This function is synchronous
+so using it will block Emacs unless its ran on a thread."
   (let* ((proj-root (if DIR
                         DIR
-                      (projectile-project-root)))
-         (proj-tasks ))
+                      (projectile-project-root))))
     ;; remove old tasks if they exist
-    (assq-delete-all (intern proj-root) taskrunner-tasks-cache)
-    (setq proj-tasks (taskrunner-get-tasks-sync proj-root))
-    ;; ;; Add new tasks
-    ;; (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
-    ;; Write to the cache file when a new set of tasks is found
-    ;; (taskrunner--save-tasks-to-cache-file)
-    proj-tasks))
+    (setq taskrunner-tasks-cache (assq-delete-all (intern proj-root) taskrunner-tasks-cache))
+    (taskrunner-get-tasks-sync proj-root)))
 
 (defun taskrunner-refresh-cache-async (FUNC &optional DIR)
   "Retrieve all tasks asynchronously and pass them to FUNC.
@@ -738,45 +732,7 @@ Update all caches and the cache file after this is performed."
 
     (taskrunner--save-tasks-to-cache-file)))
 
-;; Threading functions. Available only when `make-thread' function is present
-(when (fboundp 'make-thread)
-  (defvar taskrunner--thread-result nil
-    "Variable used to hold the result of a computation done inside of a thread.
-This variable is used so the main thread can invoke display related functions
-from the main thread after a certain computation is done.")
-
-  (defcustom taskrunner-thread-poll-time 3
-    "The time interval used to poll for the result of a thread."
-    :group 'taskrunner
-    :type 'integer)
-
-  (defvar taskrunner--thread-timer nil
-    "Variable contains the timer used to poll for thread results.")
-
-  (defun taskrunner--thread-poll-function (FUNC)
-    "Run function FUNC in a thread.
-After the function is finished running, its result is stored in the variable
-`taskrunner--thread-result'."
-    (when taskrunner--thread-result
-      (cancel-timer taskrunner--thread-timer)
-      (setq taskrunner--thread-timer nil)
-      (funcall FUNC taskrunner--thread-result)))
-
-  (defun taskrunner-run-thread-function (THREAD-FUN RESULT-FUN)
-    "Run THREAD-FUN on a separate thread and poll for its result.
-When the function completes, the result is passed to RESULT-FUN.  THREAD-FUN
-should be a function which does not accept any arguments.  RESULT-FUN should
-accept only one argument which is the result of THREAD-FUN."
-    (setq taskrunner--thread-result nil)
-    (setq taskrunner--thread-timer (run-at-time nil
-                                                taskrunner-thread-poll-time
-                                                (lambda ()
-                                                  (taskrunner--thread-poll-function
-                                                   RESULT-FUN))))
-    (make-thread (lambda ()
-                   (setq taskrunner--thread-result (funcall THREAD-FUN))))))
-
 ;;;; Footer
 
-    (provide 'taskrunner)
+(provide 'taskrunner)
 ;;; taskrunner.el ends here
