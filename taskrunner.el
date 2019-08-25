@@ -150,7 +150,7 @@ use the project root for the currently visited buffer."
   (let ((proj-dir (if DIR
                       (intern DIR)
                     (intern (projectile-project-root)))))
-    (car-safe (alist-get proj-dir taskrunner-last-command-cache))))
+    (alist-get proj-dir taskrunner-last-command-cache)))
 
 (defun taskrunner-set-last-command-ran (ROOT DIR COMMAND)
   "Set the COMMAND ran in DIR to be the last command ran for project in ROOT."
@@ -533,6 +533,7 @@ If DIR is non-nil then tasks are gathered from that directory."
   ;; Read the cache file if it exists.
   ;; This is done only once at startup
   (unless taskrunner--cache-file-read
+    (message "READ FILE")
     (taskrunner--read-cache-file)
     (setq taskrunner--cache-file-read t))
 
@@ -656,11 +657,15 @@ from the build cache."
           (t
            (setq command (concat taskrunner-program " " task-name))))
 
-    ;; Add to last command cache(overwrites previous command)
-    (taskrunner-set-last-command-ran (projectile-project-root) default-directory command)
+    ;; Add to last command cache(overwrites previous command) Need to add
+    ;; special handling for yarn/npm since they require the run keyword inserted
+    ;; between taskname and npm/yarn
+    (if (or (string-equal taskrunner-program "npm")
+            (string-equal taskrunner-program "yarn"))
+        (taskrunner-set-last-command-ran (projectile-project-root) default-directory (concat taskrunner-program " " task-name))
+      (taskrunner-set-last-command-ran (projectile-project-root) default-directory command))
 
-    (compilation-start command t (taskrunner--generate-buffer-name taskrunner-program task-name) t))
-  )
+    (compilation-start command t (taskrunner--generate-buffer-name taskrunner-program task-name) t)))
 
 (defun taskrunner-rerun-last-task (DIR)
   "Rerun the last task which was ran for the project in DIR."
@@ -720,7 +725,7 @@ Update all caches and the cache file after this is performed."
 
     (dolist (build-folder taskrunner-build-cache)
       (if (file-directory-p (symbol-name (car build-folder)))
-          (push build-folder new-command-cache)))
+          (push build-folder new-build-cache)))
 
     (setq taskrunner-tasks-cache new-task-cache)
     (setq taskrunner-last-command-cache new-command-cache)
