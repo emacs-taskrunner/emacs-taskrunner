@@ -93,9 +93,7 @@ This function is not meant to be used externally.  Use
       (narrow-to-region beg end)
       (cl-map 'list (lambda (elem)
                       (concat "GRUNT" " " (car (split-string (string-trim elem) " "))))
-              (split-string (buffer-string) "\n")))
-    )
-  )
+              (split-string (buffer-string) "\n")))))
 
 (defun taskrunner-get-grunt-tasks (DIR)
   "Retrieve the grunt tasks for the project in directory DIR.
@@ -105,7 +103,7 @@ This function returns a list of the form:
         (tasks))
     (call-process "grunt" nil (taskrunner--make-task-buff-name "grunt") nil "--help")
     (with-temp-buffer
-      (set-buffer (taskrunner--get-cargo-make-tasks-from-buffer "grunt"))
+      (set-buffer (taskrunner--make-task-buff-name "grunt"))
       (setq tasks (taskrunner--get-grunt-tasks-from-buffer))
       (kill-current-buffer))
     (butlast tasks)))
