@@ -595,13 +595,15 @@ containing the new tasks."
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root)))
-         (proj-tasks (taskrunner-collect-tasks proj-root)))
+         (proj-tasks ))
     ;; remove old tasks if they exist
     (assq-delete-all (intern proj-root) taskrunner-tasks-cache)
-    ;; Add new tasks
-    (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
+    (setq proj-tasks (taskrunner-get-tasks-sync proj-root))
+    ;; ;; Add new tasks
+    ;; (push (cons (intern proj-root) proj-tasks) taskrunner-tasks-cache)
     ;; Write to the cache file when a new set of tasks is found
-    (taskrunner--save-tasks-to-cache-file)))
+    ;; (taskrunner--save-tasks-to-cache-file)
+    proj-tasks))
 
 (defun taskrunner-refresh-cache-async (FUNC &optional DIR)
   "Retrieve all tasks asynchronously and pass them to FUNC.
@@ -737,9 +739,9 @@ Update all caches and the cache file after this is performed."
     (taskrunner--save-tasks-to-cache-file)))
 
 ;; Threading functions. Available only when `make-thread' function is present
-(if (fboundp 'make-thread)
-    (defvar taskrunner--thread-result nil
-      "Variable used to hold the result of a computation done inside of a thread.
+(when (fboundp 'make-thread)
+  (defvar taskrunner--thread-result nil
+    "Variable used to hold the result of a computation done inside of a thread.
 This variable is used so the main thread can invoke display related functions
 from the main thread after a certain computation is done.")
 
