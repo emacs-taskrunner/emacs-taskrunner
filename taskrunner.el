@@ -6,7 +6,7 @@
 ;; URL: https://github.com/emacs-taskrunner/emacs-taskrunner
 ;; Version: 0.5
 ;; Package-Requires: ((emacs "24.4"))
-;; Keywords: build-system taskrunner build task-runner tasks
+;; Keywords: build-system taskrunner build task-runner tasks convenience
 
 ;; This file is not part of GNU Emacs.
 
@@ -95,7 +95,7 @@
 
 (defgroup taskrunner nil
   "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively."
-  :group 'extensions)
+  :group 'convenience)
 
 ;; Variables:
 
@@ -447,9 +447,9 @@ updating the cache."
         (setq tasks (append tasks (taskrunner-get-cargo-make-tasks DIR))))
 
     (cond ((member "CMakeLists.txt" work-dir-files)
-           (setq tasks (append tasks (taskrunner-cmake-find-build-folder DIR))))
+           (setq tasks (append tasks (taskrunner-get-cmake-tasks DIR))))
           ((taskrunner-file-in-source-folder-p DIR work-dir-files "CMakeLists.txt")
-           (setq tasks (append tasks (taskrunner-cmake-find-build-folder DIR)))))
+           (setq tasks (append tasks (taskrunner-get-cmake-tasks DIR)))))
 
     (cond ((member "meson.build" work-dir-files)
            (setq tasks (append tasks (taskrunner-get-meson-tasks DIR))))

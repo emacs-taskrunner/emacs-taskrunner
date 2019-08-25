@@ -85,14 +85,15 @@ If HIDDEN is non-nil then include targets which start with _."
         (widen)
         )
       )
+    (taskrunner-add-to-build-cache (projectile-project-root) DIR)
     (cl-map 'list (lambda (elem)
                     (concat "MAKE" " " elem)) targets)
     )
   )
 
 
-(defun taskrunner-cmake-find-build-folder (ROOT)
-  "Attempt to locate the build folder in a CMake project in directory ROOT."
+(defun taskrunner-get-cmake-tasks (ROOT)
+  "Retrieve all cmake tasks for the project in directory ROOT."
   (let ((dir-contents (directory-files ROOT))
         (build-dir-name)
         (build-path)
@@ -112,8 +113,7 @@ If HIDDEN is non-nil then include targets which start with _."
       (setq build-path (expand-file-name build-dir-name ROOT))
       (setq dir-contents (directory-files build-path))
       (when (member "Makefile" dir-contents)
-        (setq targets (taskrunner-get-make-targets build-path "Makefile" nil))
-        (taskrunner-add-to-build-cache ROOT build-path)))
+        (setq targets (taskrunner-get-make-targets build-path "Makefile" nil))))
     targets
     )
   )
@@ -130,7 +130,8 @@ If HIDDEN is non-nil then include targets which start with _."
         (push (concat "NINJA" " " (car (split-string elem ":"))) targets))
       (kill-current-buffer))
     (when targets
-      (pop targets))
+      (pop targets)
+      (taskrunner-add-to-build-cache (projectile-project-root) DIR))
     targets))
 
 (defun taskrunner-get-meson-tasks (ROOT)
