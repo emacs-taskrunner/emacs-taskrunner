@@ -736,44 +736,45 @@ Update all caches and the cache file after this is performed."
 
     (taskrunner--save-tasks-to-cache-file)))
 
-;; Threading functions
-(defvar taskrunner--thread-result nil
-  "Variable used to hold the result of a computation done inside of a thread.
+;; Threading functions. Available only when `make-thread' function is present
+(if (fboundp 'make-thread)
+    (defvar taskrunner--thread-result nil
+      "Variable used to hold the result of a computation done inside of a thread.
 This variable is used so the main thread can invoke display related functions
 from the main thread after a certain computation is done.")
 
-(defcustom taskrunner-thread-poll-time 3
-  "The time interval used to poll for the result of a thread."
-  :group 'taskrunner
-  :type 'integer)
+  (defcustom taskrunner-thread-poll-time 3
+    "The time interval used to poll for the result of a thread."
+    :group 'taskrunner
+    :type 'integer)
 
-(defvar taskrunner--thread-timer nil
-  "Variable contains the timer used to poll for thread results.")
+  (defvar taskrunner--thread-timer nil
+    "Variable contains the timer used to poll for thread results.")
 
-(defun taskrunner--thread-poll-function (FUNC)
-  "Run function FUNC in a thread.
+  (defun taskrunner--thread-poll-function (FUNC)
+    "Run function FUNC in a thread.
 After the function is finished running, its result is stored in the variable
 `taskrunner--thread-result'."
-  (when taskrunner--thread-result
-    (cancel-timer taskrunner--thread-timer)
-    (setq taskrunner--thread-timer nil)
-    (funcall FUNC taskrunner--thread-result)))
+    (when taskrunner--thread-result
+      (cancel-timer taskrunner--thread-timer)
+      (setq taskrunner--thread-timer nil)
+      (funcall FUNC taskrunner--thread-result)))
 
-(defun taskrunner-run-thread-function (THREAD-FUN RESULT-FUN)
-  "Run THREAD-FUN on a separate thread and poll for its result.
+  (defun taskrunner-run-thread-function (THREAD-FUN RESULT-FUN)
+    "Run THREAD-FUN on a separate thread and poll for its result.
 When the function completes, the result is passed to RESULT-FUN.  THREAD-FUN
 should be a function which does not accept any arguments.  RESULT-FUN should
 accept only one argument which is the result of THREAD-FUN."
-  (setq taskrunner--thread-result nil)
-  (setq taskrunner--thread-timer (run-at-time nil
-                                              taskrunner-thread-poll-time
-                                              (lambda ()
-                                                (taskrunner--thread-poll-function
-                                                 RESULT-FUN))))
-  (make-thread (lambda ()
-                 (setq taskrunner--thread-result (funcall THREAD-FUN)))))
+    (setq taskrunner--thread-result nil)
+    (setq taskrunner--thread-timer (run-at-time nil
+                                                taskrunner-thread-poll-time
+                                                (lambda ()
+                                                  (taskrunner--thread-poll-function
+                                                   RESULT-FUN))))
+    (make-thread (lambda ()
+                   (setq taskrunner--thread-result (funcall THREAD-FUN))))))
 
 ;;;; Footer
 
-(provide 'taskrunner)
+    (provide 'taskrunner)
 ;;; taskrunner.el ends here
