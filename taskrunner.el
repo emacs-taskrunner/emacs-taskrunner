@@ -558,15 +558,17 @@ If DIR is non-nil then tasks are gathered from that directory."
             (progn (setq proj-tasks (taskrunner-collect-tasks proj-root))
                    (setq cache-status nil))
           (setq cache-status t))
-        (list cache-status proj-root proj-tasks))
+        (list cache-status proj-root proj-tasks taskrunner-build-cache))
       )
    (lambda (TARGETS)
      (let ((cache-status (car TARGETS))
            (proj-dir (cadr TARGETS))
-           (proj-tasks (caddr TARGETS)))
+           (proj-tasks (caddr TARGETS))
+           (build-cache (cadddr TARGETS)))
        ;; If the tasks are not cached then add them to the cache and write it to the file.
        (unless cache-status
          (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
+         (setq taskrunner-build-cache build-cache)
          (taskrunner--save-tasks-to-cache-file))
        (funcall FUNC proj-tasks)))))
 
@@ -681,7 +683,7 @@ This is not meant to be used for anything seen by the user."
     (insert "\nLast command cache contents\n")
     (dolist (el taskrunner-last-command-cache)
       (insert (format "%s\n" el)))
-    (insert "\nCMake build cache contents\n")
+    (insert "\nBuild cache contents\n")
     (dolist (el taskrunner-build-cache)
       (insert (format "%s\n" el)))
     (switch-to-buffer buff)))
