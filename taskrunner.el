@@ -637,13 +637,27 @@ from the build cache."
                                    task-name)))
     ;; Special case handling for commands which use the build cache or whih need
     ;; extra arguments provided to run a specific task
-    (cond ((string-equal "ninja" taskrunner-program))
-          ((string-equal "make" taskrunner-program))
+    (cond ((string-equal "ninja" taskrunner-program)
+           (when (and USE-BUILD-CACHE
+                      (taskrunner-get-build-cache default-directory))
+             (setq default-directory (taskrunner-get-build-cache default-directory)))
+           (setq command (concat taskrunner-program " " task-name)))
+          ((string-equal "make" taskrunner-program)
+           (when (and USE-BUILD-CACHE
+                      (taskrunner-get-build-cache default-directory))
+             (setq default-directory (taskrunner-get-build-cache default-directory)))
+           (setq command (concat taskrunner-program " " task-name)))
           ((string-equal "npm" taskrunner-program)
            (setq command (concat taskrunner-program " " "run" " " task-name)))
           ((string-equal "yarn" taskrunner-program)
            (setq command (concat taskrunner-program " " "run" " " task-name)))
-          )
+          (t
+           (setq command (concat taskrunner-program " " task-name))))
+
+    ;; Add to last command cache(overwrites previous command)
+    (taskrunner-set-last-command-ran (projectile-project-root) default-directory command)
+
+    (compilation-start command t (taskrunner--generate-buffer-name taskrunner-program t))
     )
   )
 
