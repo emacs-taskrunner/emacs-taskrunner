@@ -63,13 +63,14 @@ This function returns a list of the form:
 \(\PM TASK1\" \"PM TASK2\"...)
 where PM is the package manager used."
   (let* ((package-path (expand-file-name "package.json" DIR))
-         (package-json-scripts (assoc 'scripts (json-read-file package-path)))
-         (task-prefix (taskrunner--yarn-or-npm DIR)))
-    (cl-map 'list (lambda (elem)
-                    (concat task-prefix " " (symbol-name (car elem))))
-            (cdr package-json-scripts))
-    )
-  )
+         (package-json-scripts (alist-get 'scripts (json-read-file package-path)))
+         (task-prefix (taskrunner--yarn-or-npm DIR))
+         (tasks))
+    (when package-json-scripts
+      (setq tasks (cl-map 'list (lambda (elem)
+                                  (concat task-prefix " " (symbol-name (car elem))))
+                          package-json-scripts)))
+    tasks))
 
 (defun taskrunner-get-gulp-tasks (DIR)
   "Retrieve the gulp tasks for the project in directory DIR.
