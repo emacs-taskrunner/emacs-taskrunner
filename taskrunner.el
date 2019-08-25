@@ -511,14 +511,14 @@ Warning: This function runs synchronously and will block Emacs!"
                       (projectile-project-root)))
          (proj-tasks (alist-get (intern proj-root) taskrunner-tasks-cache)))
     ;; If the tasks do not exist, retrieve them first and then add to cache
-    (if (not proj-tasks)
-        (progn
-          (setq proj-tasks (taskrunner-collect-tasks proj-root))
-          ;; Add the project to the list. Use a symbol for faster comparison
-          (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
-          ;; Write to the cache file when a new set of tasks is found.
-          ;; This will overwrite anything
-          (taskrunner--save-tasks-to-cache-file)))
+    (unless proj-tasks
+      (progn
+        (setq proj-tasks (taskrunner-collect-tasks proj-root))
+        ;; Add the project to the list. Use a symbol for faster comparison
+        (push (cons (intern proj-root)  proj-tasks) taskrunner-tasks-cache)
+        ;; Write to the cache file when a new set of tasks is found.
+        ;; This will overwrite anything
+        (taskrunner--save-tasks-to-cache-file)))
     ;; Return the tasks
     proj-tasks))
 
@@ -736,6 +736,7 @@ Update all caches and the cache file after this is performed."
 
     (taskrunner--save-tasks-to-cache-file)))
 
+;; Threading functions
 (defvar taskrunner--thread-result nil
   "Variable used to hold the result of a computation done inside of a thread.
 This variable is used so the main thread can invoke display related functions
@@ -764,13 +765,13 @@ When the function completes, the result is passed to RESULT-FUN.  THREAD-FUN
 should be a function which does not accept any arguments.  RESULT-FUN should
 accept only one argument which is the result of THREAD-FUN."
   (setq taskrunner--thread-result nil)
-  (make-thread (lambda ()
-                 (setq taskrunner--thread-result (funcall THREAD-FUN))))
   (setq taskrunner--thread-timer (run-at-time nil
                                               taskrunner-thread-poll-time
                                               (lambda ()
                                                 (taskrunner--thread-poll-function
-                                                 RESULT-FUN)))))
+                                                 RESULT-FUN))))
+  (make-thread (lambda ()
+                 (setq taskrunner--thread-result (funcall THREAD-FUN)))))
 
 ;;;; Footer
 
