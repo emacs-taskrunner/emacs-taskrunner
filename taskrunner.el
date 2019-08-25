@@ -571,7 +571,8 @@ If DIR is non-nil then tasks are gathered from that directory."
          (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
          (setq taskrunner-build-cache build-cache)
          (taskrunner--save-tasks-to-cache-file))
-       (funcall FUNC proj-tasks)))))
+       (with-local-quit
+         (funcall FUNC proj-tasks))))))
 
 (defun taskrunner-project-cached-p (&optional DIR)
   "Check if either the current project or the one in directory DIR are cached.
