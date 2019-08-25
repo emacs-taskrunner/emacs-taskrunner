@@ -7,12 +7,13 @@ interactive interface through helm/ivy/ido which will let the user select tasks
 and run them. Additionally, it will also provide a task caching mechanism so the
 tasks do not have to be retrieved over and over again.
 
-A larger goal to be looked at down the line would be to use async
-processes/threads so emacs does not freeze while the processes are being
-retrieved. For the time being, the main focus is to find a way to reliably parse
-and return all tasks from a project directory and execute them.
+*Warning*: I have not worked with most of these build systems/taskrunners but
+ support has been provided for them. Since my knowledge is fairly elementary, I
+ might miss some subtleties. If you have any advice then please feel free to
+ open a pull request/issue on this repository. Thanks
+ 
 * API
-TODO: Finish this
+TODO: Document the API
 * Project Status
 Currently, this project can is stable and can be used for the following
 systems/frontends listed below.
@@ -36,12 +37,12 @@ systems/frontends listed below.
 - [X] [[https://github.com/pydoit/doit][doit]] 
 - [X] [[https://github.com/jakedeichert/mask][mask]] 
 - [X] [[https://github.com/casey/just][just]] 
+- [X] [[https://github.com/sagiegurari/cargo-make][cargo-make]]
 - [X] cargo(Limited Support)
 - [X] go compiler(Limited support)
 - [X] Cask(Limited Support)
 - [X] stack(Limited Support)
 - [X] cabal(Limited Support)
-- [X] [[https://github.com/sagiegurari/cargo-make][cargo-make]]
 **** User interfaces
 - [X] ivy
 - [X] helm

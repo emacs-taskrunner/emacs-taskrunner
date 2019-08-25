@@ -28,8 +28,7 @@
                      )
                     )
                   )
-          (split-string (buffer-string) "\n"))
-  )
+          (split-string (buffer-string) "\n")))
 
 
 (defun taskrunner-get-mix-tasks (DIR)

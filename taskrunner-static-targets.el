@@ -2,6 +2,8 @@
 ;; Copyright (C) 2019 Yavor Konstantinov
 
 ;;;; Commentary:
+;; This file adds support for "static" targets which are targets which do not change.
+;; These are mostly for compilers.
 ;; Support for:
 ;; - Rust/cargo
 ;; - Golang/go

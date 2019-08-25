@@ -2,8 +2,15 @@
 ;; Copyright (C) 2019 Yavor Konstantinov
 
 ;;; Commentary:
+;; This file provides support for general taskrunners which are not tied to
+;; a specific language.
 ;; Support included for:
 ;; Golang's Task
+;; Mage
+;; cargo-make
+;; mask
+;; just
+;; doit
 
 ;;; Code:
 

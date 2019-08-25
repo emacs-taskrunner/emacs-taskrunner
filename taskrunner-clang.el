@@ -6,6 +6,7 @@
 ;; Support included for:
 ;; - Makefiles(Makefile, makefile, GNUmakefile)
 ;; - CMake
+;; - Meson/Ninja
 
 ;;;; Requirements
 
@@ -114,9 +115,7 @@ If HIDDEN is non-nil then include targets which start with _."
       (setq dir-contents (directory-files build-path))
       (when (member "Makefile" dir-contents)
         (setq targets (taskrunner-get-make-targets build-path "Makefile" nil))))
-    targets
-    )
-  )
+    targets))
 
 (defun taskrunner-get-ninja-tasks (DIR)
   "Retrieve all ninja tasks from directory DIR."
@@ -135,7 +134,7 @@ If HIDDEN is non-nil then include targets which start with _."
     targets))
 
 (defun taskrunner-get-meson-tasks (ROOT)
-  "Retrieve all ninja tasks from a meson project in directory ROOT."
+  "Retrieve all Ninja tasks from a Meson project in directory ROOT."
   (let ((dir-contents (directory-files ROOT))
         (build-dir-name) ;; Build folder name
         (build-path) ;; Absolute path to build folder
@@ -152,7 +151,8 @@ If HIDDEN is non-nil then include targets which start with _."
       (setq i (1+ i)))
     (when found-flag
       (setq build-path (expand-file-name build-dir-name ROOT))
-      (setq targets (taskrunner-get-ninja-tasks build-path)))))
+      (setq targets (taskrunner-get-ninja-tasks build-path)))
+    targets))
 
 (provide 'taskrunner-clang)
 ;;; taskrunner-clang.el ends here

@@ -1,6 +1,8 @@
 ;;; taskrunner-shell.el --- Provide functions to retrieve shell script targets -*- lexical-binding: t; -*-
 ;; Copyright (C) 2019 Yavor Konstantinov
 
+;; TODO: Find a way to reliably run tasks in the shell where they must
+;; run(powershell scripts in powershell, bash in bash...)
 ;;;; Commentary:
 ;; Support for:
 ;; - Bash
