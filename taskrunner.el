@@ -703,6 +703,31 @@ This is not meant to be used for anything seen by the user."
       (dolist (buff taskrunner-buffers)
         (kill-buffer buff)))))
 
+(defun taskrunner-clean-up-projects ()
+  "Remove all projects which do not exist anymore from all caches.
+Update all caches and the cache file after this is performed."
+  (let ((new-task-cache '())
+        (new-command-cache '())
+        (new-build-cache '()))
+
+    (dolist (task taskrunner-tasks-cache)
+      (if (file-directory-p (car task))
+          (push task new-task-cache)))
+
+    (dolist (command taskrunner-last-command-cache)
+      (if (file-directory-p (car command))
+          (push command new-command-cache)))
+
+    (dolist (build-folder taskrunner-build-cache)
+      (if (file-directory-p (car build-folder))
+          (push build-folder new-command-cache)))
+
+    (setq taskrunner-tasks-cache new-task-cache)
+    (setq taskrunner-last-command-cache new-command-cache)
+    (setq taskrunner-build-cache new-build-cache)
+
+    (taskrunner--save-tasks-to-cache-file)))
+
 ;;;; Footer
 
 (provide 'taskrunner)
