@@ -711,15 +711,15 @@ Update all caches and the cache file after this is performed."
         (new-build-cache '()))
 
     (dolist (task taskrunner-tasks-cache)
-      (if (file-directory-p (car task))
+      (if (file-directory-p (symbol-name (car task)))
           (push task new-task-cache)))
 
     (dolist (command taskrunner-last-command-cache)
-      (if (file-directory-p (car command))
+      (if (file-directory-p (symbol-name(car command)))
           (push command new-command-cache)))
 
     (dolist (build-folder taskrunner-build-cache)
-      (if (file-directory-p (car build-folder))
+      (if (file-directory-p (symbol-name (car build-folder)))
           (push build-folder new-command-cache)))
 
     (setq taskrunner-tasks-cache new-task-cache)
