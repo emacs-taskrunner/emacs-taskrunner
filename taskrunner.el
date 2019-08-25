@@ -105,17 +105,6 @@
   :group 'taskrunner
   :type 'string)
 
-(defvar taskrunner-last-command-cache '()
-  "A cache used to store the last executed command for each project.")
-
-(defvar taskrunner-tasks-cache '()
-  "A cache used to store the tasks retrieved.
-It is an alist of the form (project-root . list-of-tasks)")
-
-(defvar taskrunner-build-cache '()
-  "A cache used to store project build folders for retrieval.
-It is an alist of the form (project-root . build-folder)")
-
 (defvar taskrunner--cache-file-read nil
   "Indicates whether or not the cache file has been read.
 Do not edit unless you want to reread the cache.")
@@ -132,17 +121,21 @@ Do not edit this manually!")
   "\*taskrunner-.+*"
   "Regexp used to find all buffers running tasks.")
 
+;; Caches used to store data
+(defvar taskrunner-last-command-cache '()
+  "A cache used to store the last executed command for each project.")
+
+(defvar taskrunner-tasks-cache '()
+  "A cache used to store the tasks retrieved.
+It is an alist of the form (project-root . list-of-tasks)")
+
+(defvar taskrunner-build-cache '()
+  "A cache used to store project build folders for retrieval.
+It is an alist of the form (project-root . build-folder)")
+
 ;; Functions:
 
-(defmacro taskrunner--make-task-buff-name (TASKRUNNER)
-  "Create a buffer name used to retrieve the tasks for TASKRUNNER."
-  `(concat "*taskrunner-" ,TASKRUNNER "-tasks-buffer*"))
-
-(defun taskrunner--narrow-to-line ()
-  "Narrow to the line entire line that the point lies on."
-  (narrow-to-region (point-at-bol)
-                    (point-at-eol)))
-
+;; Getters and setters for caches
 (defun taskrunner-get-last-command-ran (&optional DIR)
   "Retrieve the last command ran for the project.
 If DIR is non-nil then return the command for for that directory.  Otherwise,
@@ -175,6 +168,9 @@ use the project root for the currently visited buffer."
 (defun taskrunner-get-build-cache (PROJ-ROOT)
   "Retrieve the build folder for PROJ-ROOT.  Return nil if it does not exist."
   (car-safe (alist-get (intern PROJ-ROOT) taskrunner-build-cache)))
+(defmacro taskrunner--make-task-buff-name (TASKRUNNER)
+  "Create a buffer name used to retrieve the tasks for TASKRUNNER."
+  `(concat "*taskrunner-" ,TASKRUNNER "-tasks-buffer*"))
 
 (defun taskrunner-invalidate-build-cache ()
   "Invalidate the entire build cache."
@@ -188,6 +184,12 @@ use the project root for the currently visited buffer."
   "Invalidate the entire last command cache."
   (setq taskrunner-last-command-cache nil))
 
+(defun taskrunner--narrow-to-line ()
+  "Narrow to the line entire line that the point lies on."
+  (narrow-to-region (point-at-bol)
+                    (point-at-eol)))
+
+;; Saving and reading the cache file
 (defun taskrunner--read-cache-file ()
   "Read the task cache file and initialize the task caches with its contents."
   (with-temp-buffer
@@ -571,6 +573,7 @@ If DIR is non-nil then tasks are gathered from that directory."
          (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
          (setq taskrunner-build-cache build-cache)
          (taskrunner--save-tasks-to-cache-file))
+       ;; This is to prevent erros occurring when C-g is used
        (with-local-quit
          (funcall FUNC proj-tasks))))))
 
@@ -611,8 +614,7 @@ containing the new tasks."
                       (projectile-project-root))))
     ;; remove old tasks if they exist
     (setq taskrunner-tasks-cache (assq-delete-all (intern proj-root) taskrunner-tasks-cache))
-    (taskrunner-get-tasks-async FUNC)
-    ))
+    (taskrunner-get-tasks-async FUNC)))
 
 (defun taskrunner--generate-buffer-name (TASKRUNNER TASK)
   "Generate a buffer name for compilation of TASK with TASKRUNNER program."
@@ -672,7 +674,7 @@ from the build cache."
   "Rerun the last task which was ran for the project in DIR."
   (let ((last-ran-command (taskrunner-get-last-command-ran DIR)))
     (if last-ran-command
-        (taskrunner-run-task (cadr last-ran-command) (car last-ran-command))
+        (taskrunner-run-task (cadr last-ran-command) (car last-ran-command) nil t)
       (message taskrunner-no-previous-command-ran-warning))))
 
 
