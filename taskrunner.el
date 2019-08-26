@@ -644,6 +644,9 @@ so using it will block Emacs unless its ran on a thread."
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root))))
+    ;; Set the current value for the project root to nil in order to force the
+    ;; tasks to be collected again if they do exist.
+    (taskrunner-add-to-tasks-cache proj-root nil)
     (taskrunner-get-tasks-sync proj-root)))
 
 (defun taskrunner-refresh-cache-async (FUNC &optional DIR)
@@ -655,6 +658,9 @@ containing the new tasks."
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root))))
+    ;; Set the current value for the project root to nil in order to force the
+    ;; tasks to be collected again if they do exist.
+    (taskrunner-add-to-tasks-cache proj-root nil)
     (taskrunner-get-tasks-async FUNC proj-root)))
 
 (defun taskrunner--generate-compilation-buffer-name (TASKRUNNER TASK)
@@ -738,8 +744,7 @@ from the build cache."
 Update all caches and the cache file after this is performed."
   (let ((new-task-cache '())
         (new-command-cache '())
-        (new-build-cache '())
-        )
+        (new-build-cache '()))
 
     (dolist (task taskrunner-tasks-cache)
       (if (file-directory-p (symbol-name (car task)))
