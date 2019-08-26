@@ -264,6 +264,12 @@ command `projectile-project-root'"
                   nil
                   taskrunner-cache-filepath)))
 
+(defun taskrunner-delete-cache-file ()
+  "Delete the cache file used for persistence between Emacs sessions.
+The user will be asked to confirm this action before deleting the file."
+  (if (y-or-n-p "Are you sure you want to delete the cache file? ")
+      (delete-file (expand-file-name "taskrunner-tasks.eld" user-emacs-directory))))
+
 ;; Functions/Macros related to finding files which signal what type of build
 ;; system/taskrunner is used
 (defmacro taskrunner-buffer-matching-regexp (REGEXP DIRECTORY FILE-LIST KEY MATCH-LIST)
