@@ -122,7 +122,8 @@ Do not edit this manually!")
   "\*taskrunner-.+*"
   "Regexp used to find all buffers running tasks.")
 
-;; Caches used to store data
+;; Caches used to store data related to tasks/commands
+
 (defvar taskrunner-last-command-cache (make-hash-table :test 'eq :weakness nil)
   "A cache used to store the last executed command for each project.
 It is an alist where each element is of the form (project-root command)")
@@ -141,30 +142,6 @@ It is an alist where each element is of the form (project-root list-of-commands)
 
 (defvar taskrunner-command-history-size 10
   "The maximum number of commands stored in the command cache for each project.")
-
-(defun taskrunner-add-command-to-history (ROOT COMMAND)
-  "Add COMMAND to the history cache for project in ROOT."
-  (let ((history-cache (gethash (intern ROOT) taskrunner-command-history-cache)))
-    (if history-cache
-        (if (< (length history-cache) taskrunner-command-history-size)
-            (puthash (intern ROOT) (cons COMMAND history-cache)
-                     taskrunner-command-history-cache)
-          (progn
-            (push COMMAND history-cache)
-            (puthash (intern ROOT) (butlast history-cache)
-                     taskrunner-command-history-cache)))
-      (puthash (intern ROOT) (list COMMAND) taskrunner-command-history-cache))))
-
-(defun taskrunner-get-commands-from-history (&optional ROOT)
-  "Retrieve command history list from cache if possible.
-If ROOT is non-nil then retrieve the command history for project
-from that directory.  Otherwise, use the project root as per
-`projectile-project-root'"
-  (let ((proj-dir (if ROOT
-                      ROOT
-                    (projectile-project-root))))
-    (gethash (intern proj-dir) taskrunner-command-history-cache)))
-
 
 ;; Functions:
 
@@ -191,84 +168,101 @@ TASKS should a list of strings where each string is of the form
 exists!"
   (puthash (intern ROOT) TASKS taskrunner-tasks-cache))
 
-(defun taskrunner-get-tasks-from-cache (ROOT)
+(defun taskrunner-get-tasks-from-cache (&optional ROOT)
   "Retrieve all tasks for project in ROOT if any exist.
 Return nil if none have been previously added."
-  (gethash (intern ROOT) taskrunner-tasks-cache))
+  (let ((proj-dir (if ROOT
+                      ROOT
+                    (projectile-project-root))))
+    (gethash (intern proj-dir) taskrunner-tasks-cache)))
 
 (defun taskrunner-add-to-build-cache (ROOT BUILD-DIR)
   "Add BUILD-DIR as the build directory for make in ROOT."
   (puthash (intern ROOT) BUILD-DIR taskrunner-build-cache))
 
-(defun taskrunner-get-build-cache (ROOT)
+(defun taskrunner-get-build-cache (&optional ROOT)
   "Retrieve the build folder for ROOT.  Return nil if it does not exist."
-  (gethash (intern ROOT) taskrunner-build-cache))
+  (let ((proj-dir (if ROOT
+                      ROOT
+                    (projectile-project-root))))
+    (gethash (intern proj-dir) taskrunner-build-cache)))
 
-(defmacro taskrunner--make-task-buff-name (TASKRUNNER)
-  "Create a buffer name used to retrieve the tasks for TASKRUNNER."
-  `(concat "*taskrunner-" ,TASKRUNNER "-tasks-buffer*"))
+(defun taskrunner-add-command-to-history (ROOT COMMAND)
+  "Add COMMAND to the history cache for project in ROOT."
+  (let ((history-cache (gethash (intern ROOT) taskrunner-command-history-cache)))
+    (if history-cache
+        (if (< (length history-cache) taskrunner-command-history-size)
+            (puthash (intern ROOT) (cons COMMAND history-cache)
+                     taskrunner-command-history-cache)
+          (progn
+            (push COMMAND history-cache)
+            (puthash (intern ROOT) (butlast history-cache)
+                     taskrunner-command-history-cache)))
+      (puthash (intern ROOT) (list COMMAND) taskrunner-command-history-cache))))
 
+(defun taskrunner-get-commands-from-history (&optional ROOT)
+  "Retrieve command history list from cache if possible.
+If ROOT is non-nil then retrieve the command history for project
+from that directory.  Otherwise, use the project root as per
+`projectile-project-root'"
+  (let ((proj-dir (if ROOT
+                      ROOT
+                    (projectile-project-root))))
+    (gethash (intern proj-dir) taskrunner-command-history-cache)))
+
+;; Invalidation functions for caches. These "reset" them
 (defun taskrunner-invalidate-build-cache ()
   "Invalidate the entire build cache."
-  (setq taskrunner-build-cache '()))
+  (clrhash taskrunner-build-cache))
 
 (defun taskrunner-invalidate-tasks-cache ()
   "Invalidate the entire task cache."
-  (setq taskrunner-tasks-cache nil))
+  (clrhash taskrunner-tasks-cache))
 
 (defun taskrunner-invalidate-last-command-cache ()
   "Invalidate the entire last command cache."
-  (setq taskrunner-last-command-cache nil))
+  (clrhash taskrunner-last-command-cache))
+
+(defun taskrunner-invalidate-command-history-cache ()
+  "Invalidate the entire command history cache."
+  (clrhash taskrunner-command-history-cache))
+
+;; Saving and reading the cache file
+(defun taskrunner-read-cache-file ()
+  "Read the task cache file and initialize the task caches with its contents."
+  (with-temp-buffer
+    (let ((taskrunner-cache-filepath (expand-file-name "taskrunner-tasks.eld" user-emacs-directory))
+          (file-tasks))
+      (when (file-exists-p taskrunner-cache-filepath)
+        (with-temp-buffer
+          (insert-file-contents taskrunner-cache-filepath)
+          (setq file-tasks (car (read-from-string (buffer-string))))
+          ;; Load all the caches with the retrieved info
+          (setq taskrunner-tasks-cache (nth 0 file-tasks))
+          (setq taskrunner-last-command-cache(nth 1 file-tasks))
+          (setq taskrunner-build-cache (nth 2 file-tasks))
+          (setq taskrunner-command-history-cache (nth 3 file-tasks)))))))
+
+(defun taskrunner-write-cache-file ()
+  "Save all tasks in the cache to the cache file in Emacs user directory."
+  (let ((taskrunner-cache-filepath (expand-file-name "taskrunner-tasks.eld" user-emacs-directory)))
+    (write-region (format "%s%s\n" taskrunner--cache-file-header-warning
+                          (list (prin1-to-string taskrunner-tasks-cache)
+                                (prin1-to-string taskrunner-last-command-cache)
+                                (prin1-to-string taskrunner-build-cache)
+                                (prin1-to-string taskrunner-command-history-cache)))
+                  nil
+                  taskrunner-cache-filepath)))
 
 (defun taskrunner--narrow-to-line ()
   "Narrow to the line entire line that the point lies on."
   (narrow-to-region (point-at-bol)
                     (point-at-eol)))
 
-;; Saving and reading the cache file
-(defun taskrunner--read-cache-file ()
-  "Read the task cache file and initialize the task caches with its contents."
-  (with-temp-buffer
-    (let ((cache-file-path (expand-file-name "taskrunner-tasks.eld" user-emacs-directory))
-          (file-tasks))
-      (when (file-exists-p cache-file-path)
-        (with-temp-buffer
-          (insert-file-contents cache-file-path)
-          (setq file-tasks (car (read-from-string (buffer-string))))
-          ;; Load all the caches with the retrieved info
-          (setq taskrunner-tasks-cache (nth 0 file-tasks))
-          (setq taskrunner-last-command-cache(nth 1 file-tasks))
-          (setq taskrunner-build-cache (nth 2 file-tasks)))))))
+(defmacro taskrunner--make-task-buff-name (TASKRUNNER)
+  "Create a buffer name used to retrieve the tasks for TASKRUNNER."
+  `(concat "*taskrunner-" ,TASKRUNNER "-tasks-buffer*"))
 
-(defun taskrunner--format-list-for-write (LIST)
-  "Format the alist LIST for writing.
-LIST should have the form of (SYMBOL STRING STRING...STRING).
-This function will surround each STRING with another set of
-double quotes.  This is done so that when the file is read back,
-the strings are still surrounded with double quotes."
-  (if LIST
-      (let ((formatted-list '()))
-        (dolist (elem LIST)
-          (push  (cl-map 'list (lambda (elem)
-                                 (if (stringp elem)
-                                     (concat "\"" elem "\"")
-                                   elem))
-                         elem)
-                 formatted-list))
-        formatted-list)
-    '()))
-
-(defun taskrunner--write-to-cache-file (TASKS)
-  "Write TASKS to the taskrunner tasks cache file."
-  (let ((content-string (format "%s%s\n" taskrunner--cache-file-header-warning TASKS))
-        (cache-filepath (expand-file-name "taskrunner-tasks.eld" user-emacs-directory)))
-    (write-region content-string nil cache-filepath)))
-
-(defun taskrunner--save-tasks-to-cache-file ()
-  "Save all tasks in the cache to the cache file in Emacs user directory."
-  (taskrunner--write-to-cache-file (list (taskrunner--format-list-for-write taskrunner-tasks-cache)
-                                         (taskrunner--format-list-for-write taskrunner-last-command-cache)
-                                         (taskrunner--format-list-for-write taskrunner-build-cache))))
 
 (defmacro taskrunner-buffer-matching-regexp (REGEXP DIRECTORY FILE-LIST KEY MATCH-LIST)
   "Create a list containing all file names in FILE-LIST which match REGEXP.
