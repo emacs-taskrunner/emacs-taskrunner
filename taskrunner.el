@@ -698,30 +698,6 @@ from the build cache."
       (message taskrunner-no-previous-command-ran-warning))))
 
 
-(defun taskrunner--debug-show-cache-contents ()
-  "Debugging function used to show the cache contents in a new temp buffer.
-This is not meant to be used for anything seen by the user."
-  (interactive)
-  (let ((buff (generate-new-buffer "*taskrunner-debug-cache-contents*")))
-    (set-buffer buff)
-    (insert "Task cache contents\n")
-    (maphash (lambda (key elem)
-               (insert "%s %s\n" key elem))
-             taskrunner-tasks-cache)
-    (insert "\nLast command cache contents\n")
-    (maphash (lambda (key elem)
-               (insert "%s %s\n" key elem))
-             taskrunner-last-command-cache)
-    (insert "\nBuild cache contents\n")
-    (maphash (lambda (key elem)
-               (insert "%s %s\n" key elem))
-             taskrunner-build-cache)
-    (insert "\nCommand history cache contents\n")
-    (maphash (lambda (key elem)
-               (insert "%s %s\n" key elem))
-             taskrunner-command-history-cache)
-    (switch-to-buffer buff)))
-
 
 (defun taskrunner-get-compilation-buffers ()
   "Return a list of the names of all taskrunner compilation buffers."
@@ -762,8 +738,30 @@ Update all caches and the cache file after this is performed."
     (setq taskrunner-last-command-cache new-command-cache)
     (setq taskrunner-build-cache new-build-cache)
 
-    (taskrunner-write-cache-file))
-  )
+    (taskrunner-write-cache-file)))
+
+;; Debugging utilities
+(defmacro taskrunner--insert-hashmap-contents (HASHMAP-NAME)
+  "Insert the elements of the hashmap with HASHMAP-NAME in current buffer."
+  `(maphash (lambda (key elem)
+              (insert (symbol-name key) " " (format "%s" elem) "\n"))
+            ,HASHMAP-NAME))
+
+(defun taskrunner--debug-show-cache-contents ()
+  "Debugging function used to show the cache contents in a new temp buffer.
+This is not meant to be used for anything seen by the user."
+  (interactive)
+  (let ((buff (generate-new-buffer "*taskrunner-debug-cache-contents*")))
+    (set-buffer buff)
+    (insert "Task cache contents\n")
+    (taskrunner--insert-hashmap-contents taskrunner-tasks-cache)
+    (insert "\nLast command cache contents\n")
+    (taskrunner--insert-hashmap-contents taskrunner-last-command-cache)
+    (insert "\nBuild cache contents\n")
+    (taskrunner--insert-hashmap-contents taskrunner-build-cache)
+    (insert "\nCommand history cache contents\n")
+    (taskrunner--insert-hashmap-contents taskrunner-command-history-cache)
+    (switch-to-buffer buff)))
 
 ;;;; Footer
 
