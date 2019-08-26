@@ -213,8 +213,8 @@ Return nil if none have been previously added."
 (defun taskrunner-get-commands-from-history (&optional ROOT)
   "Retrieve command history list from cache if possible.
 If ROOT is non-nil then retrieve the command history for project
-from that directory.  Otherwise, use the project root as per
-`projectile-project-root'"
+from that directory.  Otherwise, use the project root as per the
+command `projectile-project-root'"
   (let ((proj-dir (if ROOT
                       ROOT
                     (projectile-project-root))))
@@ -633,7 +633,7 @@ containing the new tasks."
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root))))
-    (taskrunner-get-tasks-async FUNC)))
+    (taskrunner-get-tasks-async FUNC proj-root)))
 
 (defun taskrunner--generate-compilation-buffer-name (TASKRUNNER TASK)
   "Generate a buffer name for compilation of TASK with TASKRUNNER program."
