@@ -110,7 +110,7 @@
   "Indicates whether or not the cache file has been read.
 Do not edit unless you want to reread the cache.")
 
-(defvar taskrunner--tempdir nil
+(defvar taskrunner--async-process-dir nil
   "Used to hold the working directory argument for usage in the async package.
 Do not edit this manually!")
 
@@ -549,14 +549,62 @@ Warning: This function runs synchronously and will block Emacs!"
     ;; Return the tasks
     proj-tasks))
 
-;; TODO: Use `nth' when retrieving values instead of cadr,caddr...
-(defun taskrunner-get-tasks-async (FUNC &optional DIR)
-  "Retrieve the tasks from the currently visited project asynchronously.
+(defun taskrunner--start-async-task-process (FUNC &optional DIR)
+  "Run `emacs-async' to retrieve the tasks for the currently visited project.
 The resulting list of tasks which may be empty is then passed to
 the function FUNC.  This function must accept only one argument
 which will be a list of strings consisting of taskrunner/build
-systems and target name.  Example: \(\"MAKE target1\" \"MAKE
-target2\"...)
+systems and target name.
+
+Example:
+\(\"MAKE target1\" \"MAKE target2\"...)
+
+If DIR is non-nil then tasks are gathered from that directory."
+  (message "TASKRUNNER: START ASYNC PROCESS")
+  ;; Variable used so that the async call can use the DIR argument
+  (setq taskrunner--async-process-dir DIR)
+  (async-start
+   `(lambda ()
+      ;; inject the load path so we can find taskrunner
+      ,(async-inject-variables "\\`load-path\\'")
+      ;; Inject all variables from the taskrunner package
+      ,(async-inject-variables "taskrunner-.*")
+      (require 'cl-lib)
+      (require 'taskrunner)
+      (let* ((proj-root (if taskrunner--async-process-dir
+                            taskrunner--async-process-dir
+                          (projectile-project-root)))
+             (proj-tasks (taskrunner-collect-tasks proj-root)))
+        (list proj-root proj-tasks taskrunner-build-cache)))
+   (lambda (TARGETS)
+     (let ((proj-dir (nth 0 TARGETS))
+           (proj-tasks (nth 1 TARGETS))
+           (build-cache (nth 2 TARGETS)))
+       (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
+       ;; Overwrite the build cache. It might or might not have been updated
+       ;; with more directories
+       (setq taskrunner-build-cache build-cache)
+       (taskrunner-write-cache-file)
+       ;; This is to prevent erros occurring when C-g is used from whatever is
+       ;; present in FUNC
+       (with-local-quit
+         (funcall FUNC proj-tasks))))))
+
+(defun taskrunner-get-tasks-async (FUNC &optional DIR)
+  "Retrieve the tasks for the currently visited project asynchronously.
+The resulting list of tasks (which may be empty) is then passed to
+the function FUNC.  This function must accept only one argument
+which will be a list of strings consisting of taskrunner/build
+systems and target name.
+
+Example:
+\(\"MAKE target1\" \"MAKE target2\"...)
+
+If the tasks exist in the cache then they are retrieved right away. Otherwise,
+an `emacs-async' process is started to collect them in the background.  This
+means that FUNC might be called almost instantaneously or at a later time which
+can usually range between 2-10 seconds depending on how many tasks need to be
+collected from different systems.
 
 If DIR is non-nil then tasks are gathered from that directory."
   ;; Read the cache file if it exists.
@@ -566,43 +614,17 @@ If DIR is non-nil then tasks are gathered from that directory."
     (taskrunner-read-cache-file)
     (setq taskrunner--cache-file-read t))
 
-  ;; Variable used so that the async call can use the DIR argument
-  (setq taskrunner--tempdir DIR)
-  (async-start
-   `(lambda ()
-      ;; inject the load path so we can find taskrunner
-      ,(async-inject-variables "\\`load-path\\'")
-      ;; Inject all variables from the taskrunner package
-      ,(async-inject-variables "taskrunner-.*")
-      (require 'cl-lib)
-      (require 'taskrunner)
-      (let* ((proj-root (if taskrunner--tempdir
-                            taskrunner--tempdir
-                          (projectile-project-root)))
-             (proj-tasks (taskrunner-get-tasks-from-cache proj-root))
-             (cache-status nil))
-        ;; If the tasks do not exist then collect them and set cache-status.
-        ;; cache-status can be t if the project is already cached or nil if it had
-        ;; to be retrieved.
-        (if (null proj-tasks)
-            (progn (setq proj-tasks (taskrunner-collect-tasks proj-root))
-                   (setq cache-status nil))
-          (setq cache-status t))
-        (list cache-status proj-root proj-tasks taskrunner-build-cache))
-      )
-   (lambda (TARGETS)
-     (let ((cache-status (car TARGETS))
-           (proj-dir (cadr TARGETS))
-           (proj-tasks (caddr TARGETS))
-           (build-cache (cadddr TARGETS)))
-       ;; If the tasks are not cached then add them to the cache and write it to the file.
-       (unless cache-status
-         (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
-         (setq taskrunner-build-cache build-cache)
-         (taskrunner-write-cache-file))
-       ;; This is to prevent erros occurring when C-g is used
-       (with-local-quit
-         (funcall FUNC proj-tasks))))))
+  (let* ((proj-root (if DIR
+                        DIR
+                      (projectile-project-root)))
+         (proj-tasks (taskrunner-get-tasks-from-cache proj-root)))
+    ;; Attempt to avoid spawning a process. On Linux/MacOS this should not be
+    ;; too much of a problem but it can be quite slow on Windows
+    (if proj-tasks
+        (with-local-quit
+          (message "TASKRUNNER: USE CACHED ELEMENT")
+          (funcall FUNC proj-tasks))
+      (taskrunner--start-async-task-process FUNC proj-root))))
 
 (defun taskrunner-project-cached-p (&optional DIR)
   "Check if either the current project or the one in directory DIR are cached.
