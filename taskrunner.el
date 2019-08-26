@@ -741,7 +741,7 @@ from the build cache."
 If NO-OVERWRITE is non-nil then do not overwrite the cache file.  Otherwise,
 overwrite it with the new cache contents."
   (let ((proj-paths '()))
-    (maphash (lambda (key elem)
+    (maphash (lambda (key _)
                (when (not (file-exists-p (symbol-name key)))
                  (push key proj-paths)))
              taskrunner-tasks-cache)
