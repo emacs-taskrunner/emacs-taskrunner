@@ -131,7 +131,7 @@ It is an alist where each element is of the form (project-root command)")
   "A cache used to store project build folders for retrieval.
 It is an alist of the form (project-root . build-folder)")
 
-(defvar taskrunner-tasks-cache '()
+(defvar taskrunner-tasks-cache (make-hash-table :test 'eq :weakness nil)
   "A cache used to store the tasks retrieved.
 It is an alist where each element is of the form (project-root  list-of-tasks)")
 
@@ -184,11 +184,17 @@ use the project root for the currently visited buffer."
   (taskrunner-add-command-to-history ROOT COMMAND)
   (puthash (intern ROOT) (list DIR COMMAND) taskrunner-last-command-cache))
 
-(defun taskrunner-add-to-tasks-cache (DIR TASKS)
-  "Add TASKS for project in directory DIR to the tasks cache."
-  (setq taskrunner-tasks-cache (assq-delete-all (intern DIR)
-                                                taskrunner-tasks-cache))
-  (push (cons (intern DIR) TASKS) taskrunner-tasks-cache))
+(defun taskrunner-add-to-tasks-cache (ROOT TASKS)
+  "Add TASKS for project in directory ROOT to the tasks cache.
+TASKS should a list of strings where each string is of the form
+\"TASKRUNNER-PROGRAM COMMAND\". The cache for ROOT is always overwritten if it
+exists!"
+  (puthash (intern ROOT) TASKS taskrunner-tasks-cache))
+
+(defun taskrunner-get-tasks-from-cache (ROOT)
+  "Retrieve all tasks for project in ROOT if any exist.
+Return nil if none have been previously added."
+  (gethash (intern ROOT) taskrunner-tasks-cache))
 
 (defun taskrunner-add-to-build-cache (ROOT BUILD-DIR)
   "Add BUILD-DIR as the build directory for make in ROOT."
