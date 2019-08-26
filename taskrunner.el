@@ -263,7 +263,6 @@ from that directory.  Otherwise, use the project root as per
   "Create a buffer name used to retrieve the tasks for TASKRUNNER."
   `(concat "*taskrunner-" ,TASKRUNNER "-tasks-buffer*"))
 
-
 (defmacro taskrunner-buffer-matching-regexp (REGEXP DIRECTORY FILE-LIST KEY MATCH-LIST)
   "Create a list containing all file names in FILE-LIST which match REGEXP.
 If there are any matches then the list of matching names is added
@@ -642,7 +641,7 @@ containing the new tasks."
     (setq taskrunner-tasks-cache (assq-delete-all (intern proj-root) taskrunner-tasks-cache))
     (taskrunner-get-tasks-async FUNC)))
 
-(defun taskrunner--generate-buffer-name (TASKRUNNER TASK)
+(defun taskrunner--generate-compilation-buffer-name (TASKRUNNER TASK)
   "Generate a buffer name for compilation of TASK with TASKRUNNER program."
   ;; The compilation-start function requires a function which accepts only 1
   ;; argument, the mode. It is necessary to return a lambda function so we can
@@ -694,7 +693,7 @@ from the build cache."
         (taskrunner-set-last-command-ran (projectile-project-root) default-directory (concat taskrunner-program " " task-name))
       (taskrunner-set-last-command-ran (projectile-project-root) default-directory command))
 
-    (compilation-start command t (taskrunner--generate-buffer-name taskrunner-program task-name) t)))
+    (compilation-start command t (taskrunner--generate-compilation-buffer-name taskrunner-program task-name) t)))
 
 (defun taskrunner-rerun-last-task (DIR)
   "Rerun the last task which was ran for the project in DIR."
@@ -711,14 +710,21 @@ This is not meant to be used for anything seen by the user."
   (let ((buff (generate-new-buffer "*taskrunner-debug-cache-contents*")))
     (set-buffer buff)
     (insert "Task cache contents\n")
-    (dolist (el taskrunner-tasks-cache)
-      (insert (format "%s\n" el)))
+    (maphash (lambda (key elem)
+               (insert "%s %s\n" key elem))
+             taskrunner-tasks-cache)
     (insert "\nLast command cache contents\n")
-    (dolist (el taskrunner-last-command-cache)
-      (insert (format "%s\n" el)))
+    (maphash (lambda (key elem)
+               (insert "%s %s\n" key elem))
+             taskrunner-last-command-cache)
     (insert "\nBuild cache contents\n")
-    (dolist (el taskrunner-build-cache)
-      (insert (format "%s\n" el)))
+    (maphash (lambda (key elem)
+               (insert "%s %s\n" key elem))
+             taskrunner-build-cache)
+    (insert "\nCommand history cache contents\n")
+    (maphash (lambda (key elem)
+               (insert "%s %s\n" key elem))
+             taskrunner-command-history-cache)
     (switch-to-buffer buff)))
 
 
@@ -742,7 +748,8 @@ This is not meant to be used for anything seen by the user."
 Update all caches and the cache file after this is performed."
   (let ((new-task-cache '())
         (new-command-cache '())
-        (new-build-cache '()))
+        (new-build-cache '())
+        )
 
     (dolist (task taskrunner-tasks-cache)
       (if (file-directory-p (symbol-name (car task)))
@@ -760,7 +767,8 @@ Update all caches and the cache file after this is performed."
     (setq taskrunner-last-command-cache new-command-cache)
     (setq taskrunner-build-cache new-build-cache)
 
-    (taskrunner--save-tasks-to-cache-file)))
+    (taskrunner-write-cache-file))
+  )
 
 ;;;; Footer
 
