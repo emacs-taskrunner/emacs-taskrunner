@@ -110,7 +110,7 @@
   "Indicates whether or not the cache file has been read.
 Do not edit unless you want to reread the cache.")
 
-(defvar taskrunner--tempdir nil
+(defvar taskrunner--async-process-dir nil
   "Used to hold the working directory argument for usage in the async package.
 Do not edit this manually!")
 
@@ -549,25 +549,19 @@ Warning: This function runs synchronously and will block Emacs!"
     ;; Return the tasks
     proj-tasks))
 
-;; TODO: Use `nth' when retrieving values instead of cadr,caddr...
-(defun taskrunner-get-tasks-async (FUNC &optional DIR)
-  "Retrieve the tasks from the currently visited project asynchronously.
+(defun taskrunner--start-async-task-process (FUNC &optional DIR)
+  "Run `emacs-async' to retrieve the tasks for the currently visited project.
 The resulting list of tasks which may be empty is then passed to
 the function FUNC.  This function must accept only one argument
 which will be a list of strings consisting of taskrunner/build
-systems and target name.  Example: \(\"MAKE target1\" \"MAKE
-target2\"...)
+systems and target name.
+
+Example:
+\(\"MAKE target1\" \"MAKE target2\"...)
 
 If DIR is non-nil then tasks are gathered from that directory."
-  ;; Read the cache file if it exists.
-  ;; This is done only once at startup
-  (unless taskrunner--cache-file-read
-    ;; (message "READ FILE")
-    (taskrunner-read-cache-file)
-    (setq taskrunner--cache-file-read t))
-
   ;; Variable used so that the async call can use the DIR argument
-  (setq taskrunner--tempdir DIR)
+  (setq taskrunner--async-process-dir DIR)
   (async-start
    `(lambda ()
       ;; inject the load path so we can find taskrunner
@@ -576,33 +570,58 @@ If DIR is non-nil then tasks are gathered from that directory."
       ,(async-inject-variables "taskrunner-.*")
       (require 'cl-lib)
       (require 'taskrunner)
-      (let* ((proj-root (if taskrunner--tempdir
-                            taskrunner--tempdir
+      (let* ((proj-root (if taskrunner--async-process-dir
+                            taskrunner--async-process-dir
                           (projectile-project-root)))
-             (proj-tasks (taskrunner-get-tasks-from-cache proj-root))
-             (cache-status nil))
-        ;; If the tasks do not exist then collect them and set cache-status.
-        ;; cache-status can be t if the project is already cached or nil if it had
-        ;; to be retrieved.
-        (if (null proj-tasks)
-            (progn (setq proj-tasks (taskrunner-collect-tasks proj-root))
-                   (setq cache-status nil))
-          (setq cache-status t))
-        (list cache-status proj-root proj-tasks taskrunner-build-cache))
-      )
+             (proj-tasks (taskrunner-collect-tasks proj-root)))
+        (list proj-root proj-tasks taskrunner-build-cache)))
    (lambda (TARGETS)
-     (let ((cache-status (car TARGETS))
-           (proj-dir (cadr TARGETS))
-           (proj-tasks (caddr TARGETS))
-           (build-cache (cadddr TARGETS)))
-       ;; If the tasks are not cached then add them to the cache and write it to the file.
-       (unless cache-status
-         (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
-         (setq taskrunner-build-cache build-cache)
-         (taskrunner-write-cache-file))
-       ;; This is to prevent erros occurring when C-g is used
+     (let ((proj-dir (nth 0 TARGETS))
+           (proj-tasks (nth 1 TARGETS))
+           (build-cache (nth 2 TARGETS)))
+       (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
+       ;; Overwrite the build cache. It might or might not have been updated
+       ;; with more directories
+       (setq taskrunner-build-cache build-cache)
+       (taskrunner-write-cache-file)
+       ;; This is to prevent erros occurring when C-g is used from whatever is
+       ;; present in FUNC
        (with-local-quit
          (funcall FUNC proj-tasks))))))
+
+(defun taskrunner-get-tasks-async (FUNC &optional DIR)
+  "Retrieve the tasks for the currently visited project asynchronously.
+The resulting list of tasks (which may be empty) is then passed to
+the function FUNC.  This function must accept only one argument
+which will be a list of strings consisting of taskrunner/build
+systems and target name.
+
+Example:
+\(\"MAKE target1\" \"MAKE target2\"...)
+
+If the tasks exist in the cache then they are retrieved right away. Otherwise,
+an `emacs-async' process is started to collect them in the background.  This
+means that FUNC might be called almost instantaneously or at a later time which
+can usually range between 2-10 seconds depending on how many tasks need to be
+collected from different systems.
+
+If DIR is non-nil then tasks are gathered from that directory."
+  ;; Read the cache file if it exists.
+  ;; This is done only once at startup
+  (unless taskrunner--cache-file-read
+    (taskrunner-read-cache-file)
+    (setq taskrunner--cache-file-read t))
+
+  (let* ((proj-root (if DIR
+                        DIR
+                      (projectile-project-root)))
+         (proj-tasks (taskrunner-get-tasks-from-cache proj-root)))
+    ;; Attempt to avoid spawning a process. On Linux/MacOS this should not be
+    ;; too much of a problem but it can be quite slow on Windows
+    (if proj-tasks
+        (with-local-quit
+          (funcall FUNC proj-tasks))
+      (taskrunner--start-async-task-process FUNC proj-root))))
 
 (defun taskrunner-project-cached-p (&optional DIR)
   "Check if either the current project or the one in directory DIR are cached.
@@ -622,6 +641,9 @@ so using it will block Emacs unless its ran on a thread."
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root))))
+    ;; Set the current value for the project root to nil in order to force the
+    ;; tasks to be collected again if they do exist.
+    (taskrunner-add-to-tasks-cache proj-root nil)
     (taskrunner-get-tasks-sync proj-root)))
 
 (defun taskrunner-refresh-cache-async (FUNC &optional DIR)
@@ -633,6 +655,9 @@ containing the new tasks."
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root))))
+    ;; Set the current value for the project root to nil in order to force the
+    ;; tasks to be collected again if they do exist.
+    (taskrunner-add-to-tasks-cache proj-root nil)
     (taskrunner-get-tasks-async FUNC proj-root)))
 
 (defun taskrunner--generate-compilation-buffer-name (TASKRUNNER TASK)
@@ -711,31 +736,27 @@ from the build cache."
       (dolist (buff taskrunner-buffers)
         (kill-buffer buff)))))
 
-(defun taskrunner-clean-up-projects ()
+(defun taskrunner-clean-up-projects (&optional NO-OVERWRITE)
   "Remove all projects which do not exist anymore from all caches.
-Update all caches and the cache file after this is performed."
-  (let ((new-task-cache '())
-        (new-command-cache '())
-        (new-build-cache '())
-        )
+If NO-OVERWRITE is non-nil then do not overwrite the cache file.  Otherwise,
+overwrite it with the new cache contents."
+  (let ((proj-paths '()))
+    (maphash (lambda (key _)
+               (when (not (file-exists-p (symbol-name key)))
+                 (push key proj-paths)))
+             taskrunner-tasks-cache)
 
-    (dolist (task taskrunner-tasks-cache)
-      (if (file-directory-p (symbol-name (car task)))
-          (push task new-task-cache)))
-
-    (dolist (command taskrunner-last-command-cache)
-      (if (file-directory-p (symbol-name(car command)))
-          (push command new-command-cache)))
-
-    (dolist (build-folder taskrunner-build-cache)
-      (if (file-directory-p (symbol-name (car build-folder)))
-          (push build-folder new-build-cache)))
-
-    (setq taskrunner-tasks-cache new-task-cache)
-    (setq taskrunner-last-command-cache new-command-cache)
-    (setq taskrunner-build-cache new-build-cache)
-
-    (taskrunner-write-cache-file)))
+    ;; Remove all projects whose paths are not accessible anymore. If the
+    ;; project path does not exist in one of the caches then remhash will not
+    ;; throw an error. This means that we can safely iterate over each cache and
+    ;; remove the elements even if they might not even exist within it.
+    (dolist (path proj-paths)
+      (remhash path taskrunner-tasks-cache)
+      (remhash path taskrunner-command-history-cache)
+      (remhash path taskrunner-last-command-cache)
+      (remhash path taskrunner-build-cache))
+    (unless NO-OVERWRITE
+      (taskrunner-write-cache-file))))
 
 ;; Debugging utilities
 (defmacro taskrunner--insert-hashmap-contents (HASHMAP-NAME)
