@@ -126,26 +126,26 @@ Do not edit this manually!")
 
 (defvar taskrunner-last-command-cache (make-hash-table :test 'eq :weakness nil)
   "A cache used to store the last executed command for each project.
-It is an alist where each element is of the form (project-root command)")
+It is a hashmap where each member is of the form (project-root command)")
 
 (defvar taskrunner-build-cache (make-hash-table :test 'eq :weakness nil)
   "A cache used to store project build folders for retrieval.
-It is an alist of the form (project-root . build-folder)")
+It is a hashmap where each member is of the form (project-root build-folder)")
 
 (defvar taskrunner-tasks-cache (make-hash-table :test 'eq :weakness nil)
   "A cache used to store the tasks retrieved.
-It is an alist where each element is of the form (project-root  list-of-tasks)")
+It is a hashmap where each member is of the form (project-root list-of-tasks)")
 
 (defvar taskrunner-command-history-cache (make-hash-table :test 'eq :weakness nil)
   "A cache used to store the command history for a project.
-It is an alist where each element is of the form (project-root list-of-commands)")
+It is a hashmap where each member is of the form (project-root list-of-commands)")
 
 (defvar taskrunner-command-history-size 10
   "The maximum number of commands stored in the command cache for each project.")
 
 ;; Functions:
 
-;; Helper functions
+;; Helper/Utility Functions
 (defun taskrunner--narrow-to-line ()
   "Narrow to the line entire line that the point lies on."
   (narrow-to-region (point-at-bol)
@@ -412,7 +412,6 @@ to a single file."
 
     files))
 
-
 (defun taskrunner-collect-tasks (DIR)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
@@ -550,7 +549,7 @@ Warning: This function runs synchronously and will block Emacs!"
     ;; Return the tasks
     proj-tasks))
 
-
+;; TODO: Use `nth' when retrieving values instead of cadr,caddr...
 (defun taskrunner-get-tasks-async (FUNC &optional DIR)
   "Retrieve the tasks from the currently visited project asynchronously.
 The resulting list of tasks which may be empty is then passed to
@@ -696,8 +695,6 @@ from the build cache."
     (if last-ran-command
         (taskrunner-run-task (cadr last-ran-command) (car last-ran-command) nil t)
       (message taskrunner-no-previous-command-ran-warning))))
-
-
 
 (defun taskrunner-get-compilation-buffers ()
   "Return a list of the names of all taskrunner compilation buffers."
