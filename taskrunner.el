@@ -95,6 +95,7 @@
 
 (defgroup taskrunner nil
   "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively."
+  :prefix "taskrunner-"
   :group 'convenience)
 
 ;; Variables:
@@ -122,16 +123,48 @@ Do not edit this manually!")
   "Regexp used to find all buffers running tasks.")
 
 ;; Caches used to store data
-(defvar taskrunner-last-command-cache '()
-  "A cache used to store the last executed command for each project.")
+(defvar taskrunner-last-command-cache (make-hash-table :test 'eq :weakness nil)
+  "A cache used to store the last executed command for each project.
+It is an alist where each element is of the form (project-root command)")
+
+(defvar taskrunner-build-cache (make-hash-table :test 'eq :weakness nil)
+  "A cache used to store project build folders for retrieval.
+It is an alist of the form (project-root . build-folder)")
 
 (defvar taskrunner-tasks-cache '()
   "A cache used to store the tasks retrieved.
-It is an alist of the form (project-root . list-of-tasks)")
+It is an alist where each element is of the form (project-root  list-of-tasks)")
 
-(defvar taskrunner-build-cache '()
-  "A cache used to store project build folders for retrieval.
-It is an alist of the form (project-root . build-folder)")
+(defvar taskrunner-command-history-cache (make-hash-table :test 'eq :weakness nil)
+  "A cache used to store the command history for a project.
+It is an alist where each element is of the form (project-root list-of-commands)")
+
+(defvar taskrunner-command-history-size 10
+  "The maximum number of commands stored in the command cache for each project.")
+
+(defun taskrunner-add-command-to-history (ROOT COMMAND)
+  "Add COMMAND to the history cache for project in ROOT."
+  (let ((history-cache (gethash (intern ROOT) taskrunner-command-history-cache)))
+    (if history-cache
+        (if (< (length history-cache) taskrunner-command-history-size)
+            (puthash (intern ROOT) (cons COMMAND history-cache)
+                     taskrunner-command-history-cache)
+          (progn
+            (push COMMAND history-cache)
+            (puthash (intern ROOT) (butlast history-cache)
+                     taskrunner-command-history-cache)))
+      (puthash (intern ROOT) (list COMMAND) taskrunner-command-history-cache))))
+
+(defun taskrunner-get-commands-from-history (&optional ROOT)
+  "Retrieve command history list from cache if possible.
+If ROOT is non-nil then retrieve the command history for project
+from that directory.  Otherwise, use the project root as per
+`projectile-project-root'"
+  (let ((proj-dir (if ROOT
+                      ROOT
+                    (projectile-project-root))))
+    (gethash (intern proj-dir) taskrunner-command-history-cache)))
+
 
 ;; Functions:
 
@@ -141,18 +174,15 @@ It is an alist of the form (project-root . build-folder)")
 If DIR is non-nil then return the command for for that directory.  Otherwise,
 use the project root for the currently visited buffer."
   (let ((proj-dir (if DIR
-                      (intern DIR)
-                    (intern (projectile-project-root)))))
-    (alist-get proj-dir taskrunner-last-command-cache)))
+                      DIR
+                    (projectile-project-root))))
+    (gethash (intern proj-dir) taskrunner-last-command-cache)))
 
 (defun taskrunner-set-last-command-ran (ROOT DIR COMMAND)
   "Set the COMMAND ran in DIR to be the last command ran for project in ROOT."
-  ;; Remove the the previous command if it exists. Assoc-delete-all does not
-  ;; throw an error so it is safe
-  (let ((new-command-cache (assq-delete-all (intern ROOT)
-                                            taskrunner-last-command-cache)))
-    ;; Reset the cache with new command added
-    (setq taskrunner-last-command-cache (push (list (intern ROOT) DIR COMMAND) new-command-cache))))
+  ;; Add the command to history
+  (taskrunner-add-command-to-history ROOT COMMAND)
+  (puthash (intern ROOT) (list DIR COMMAND) taskrunner-last-command-cache))
 
 (defun taskrunner-add-to-tasks-cache (DIR TASKS)
   "Add TASKS for project in directory DIR to the tasks cache."
@@ -160,14 +190,14 @@ use the project root for the currently visited buffer."
                                                 taskrunner-tasks-cache))
   (push (cons (intern DIR) TASKS) taskrunner-tasks-cache))
 
-(defun taskrunner-add-to-build-cache (PROJ-ROOT BUILD-DIR)
-  "Add BUILD-DIR as the build directory for make in PROJ-ROOT."
-  (setq taskrunner-build-cache (assq-delete-all (intern PROJ-ROOT) taskrunner-build-cache))
-  (push (list (intern PROJ-ROOT) BUILD-DIR) taskrunner-build-cache))
+(defun taskrunner-add-to-build-cache (ROOT BUILD-DIR)
+  "Add BUILD-DIR as the build directory for make in ROOT."
+  (puthash (intern ROOT) BUILD-DIR taskrunner-build-cache))
 
-(defun taskrunner-get-build-cache (PROJ-ROOT)
-  "Retrieve the build folder for PROJ-ROOT.  Return nil if it does not exist."
-  (car-safe (alist-get (intern PROJ-ROOT) taskrunner-build-cache)))
+(defun taskrunner-get-build-cache (ROOT)
+  "Retrieve the build folder for ROOT.  Return nil if it does not exist."
+  (gethash (intern ROOT) taskrunner-build-cache))
+
 (defmacro taskrunner--make-task-buff-name (TASKRUNNER)
   "Create a buffer name used to retrieve the tasks for TASKRUNNER."
   `(concat "*taskrunner-" ,TASKRUNNER "-tasks-buffer*"))
