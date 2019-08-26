@@ -560,7 +560,6 @@ Example:
 \(\"MAKE target1\" \"MAKE target2\"...)
 
 If DIR is non-nil then tasks are gathered from that directory."
-  (message "TASKRUNNER: START ASYNC PROCESS")
   ;; Variable used so that the async call can use the DIR argument
   (setq taskrunner--async-process-dir DIR)
   (async-start
@@ -610,7 +609,6 @@ If DIR is non-nil then tasks are gathered from that directory."
   ;; Read the cache file if it exists.
   ;; This is done only once at startup
   (unless taskrunner--cache-file-read
-    ;; (message "READ FILE")
     (taskrunner-read-cache-file)
     (setq taskrunner--cache-file-read t))
 
@@ -622,7 +620,6 @@ If DIR is non-nil then tasks are gathered from that directory."
     ;; too much of a problem but it can be quite slow on Windows
     (if proj-tasks
         (with-local-quit
-          (message "TASKRUNNER: USE CACHED ELEMENT")
           (funcall FUNC proj-tasks))
       (taskrunner--start-async-task-process FUNC proj-root))))
 
@@ -739,30 +736,27 @@ from the build cache."
       (dolist (buff taskrunner-buffers)
         (kill-buffer buff)))))
 
-(defun taskrunner-clean-up-projects ()
+(defun taskrunner-clean-up-projects (&optional NO-OVERWRITE)
   "Remove all projects which do not exist anymore from all caches.
-Update all caches and the cache file after this is performed."
-  (let ((new-task-cache '())
-        (new-command-cache '())
-        (new-build-cache '()))
+If NO-OVERWRITE is non-nil then do not overwrite the cache file.  Otherwise,
+overwrite it with the new cache contents."
+  (let ((proj-paths '()))
+    (maphash (lambda (key elem)
+               (when (not (file-exists-p (symbol-name key)))
+                 (push key proj-paths)))
+             taskrunner-tasks-cache)
 
-    (dolist (task taskrunner-tasks-cache)
-      (if (file-directory-p (symbol-name (car task)))
-          (push task new-task-cache)))
-
-    (dolist (command taskrunner-last-command-cache)
-      (if (file-directory-p (symbol-name(car command)))
-          (push command new-command-cache)))
-
-    (dolist (build-folder taskrunner-build-cache)
-      (if (file-directory-p (symbol-name (car build-folder)))
-          (push build-folder new-build-cache)))
-
-    (setq taskrunner-tasks-cache new-task-cache)
-    (setq taskrunner-last-command-cache new-command-cache)
-    (setq taskrunner-build-cache new-build-cache)
-
-    (taskrunner-write-cache-file)))
+    ;; Remove all projects whose paths are not accessible anymore. If the
+    ;; project path does not exist in one of the caches then remhash will not
+    ;; throw an error. This means that we can safely iterate over each cache and
+    ;; remove the elements even if they might not even exist within it.
+    (dolist (path proj-paths)
+      (remhash path taskrunner-tasks-cache)
+      (remhash path taskrunner-command-history-cache)
+      (remhash path taskrunner-last-command-cache)
+      (remhash path taskrunner-build-cache))
+    (unless NO-OVERWRITE
+      (taskrunner-write-cache-file))))
 
 ;; Debugging utilities
 (defmacro taskrunner--insert-hashmap-contents (HASHMAP-NAME)
