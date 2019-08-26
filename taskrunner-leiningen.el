@@ -6,8 +6,9 @@
 
 ;;;; Code:
 
-;;;; Required
+;;;; Requirements
 (require 'cl-lib)
+
 ;;;; Variables
 
 (defconst taskrunner-leiningen-task-section-header-regexp
