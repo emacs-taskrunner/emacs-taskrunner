@@ -50,8 +50,7 @@ If you use this library, you should never have to interact with the hashmaps
 *** Getters and setters for caches
 ~taskrunner-get-last-command-ran~: Retrieves the last command ran and returns
 it. The command will be a string or nil if the project has not ran a command. 
-It accepts an optional argument ~DIR~ which can be used to provide a path(a
-string) to the directory for which the last command should be retrieved for.
+- ~DIR~: Path to the root of the project(string)
 
 ~taskrunner-set-last-command-ran~: This sets the last command ran. It accepts
 three arguments which are:
@@ -163,8 +162,29 @@ To debug the cache contents, you can use:
 If you need to debug anything else then use the built in debugging tools that
 Emacs provides.
 ** Variables
+* Design Choices
 ** Async vs Sync
+This library comes with both sync and async functions. Originally, everything
+worked synchronously but obviously Emacs froze and was unresponsive. For most
+taskrunners/build systems, it took only 1-3 seconds for the tasks to be
+retrieved. On the other hand most Java based systems(gradle is the worst) will
+take 5-9 seconds to start up and spit out a list of tasks. As a result,
+~emacs-async~ was used as a way to avoid freezing the UI while tasks were being
+retrieved. 
+
+Under the hood, this whole library is synchronous and starts synchronous
+processes in order to coordinate the way tasks are retrieved. Most projects use
+a single build system/taskrunner but for others(web projects for example) might
+use multiple(gulp and package.json/npm scripts and so on...). If the tasks are
+retrieved asynchronously from the start then it becomes very difficult to
+synchronize the way the tasks are added to caches and might cause data
+races. Emacs 26 brought mutexes but those will freeze the UI as well while they
+are waiting.
 ** Threads vs ~emacs-async~ 
+Emacs 26 brough threads but they are cooperative. This means that processes
+which take a long time(cough, cough, Gradle and its daemon) will still freeze
+the UI even when being ran on a separate thread. Due to this, ~emacs-async~ is
+used even though the Emacs which runs this library might have threads available.
 * Project Status
 Currently, this project can is stable and can be used for the following
 systems/frontends listed below.
