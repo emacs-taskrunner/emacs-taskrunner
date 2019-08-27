@@ -48,6 +48,49 @@ If you use this library, you should never have to interact with the hashmaps
 "manually". There are getter/setter functions for each cache. They can be found below.
 ** Functions
 *** Getters and setters for caches
+~taskrunner-get-last-command-ran~: Retrieves the last command ran and returns
+it. The command will be a string or nil if the project has not ran a command. 
+It accepts an optional argument ~DIR~ which can be used to provide a path(a
+string) to the directory for which the last command should be retrieved for.
+
+~taskrunner-set-last-command-ran~: This sets the last command ran. It accepts
+three arguments which are:
+- ~ROOT~: the root of the project(string)
+- ~DIR~: The directory in which the command was ran(string)
+- ~COMMAND~: The command itself(string)
+  
+~taskrunner-add-to-tasks-cache~: Add a list of commands to the tasks cache. It
+accepts two arguments:
+- ~ROOT~: The root of the project(string)
+- ~TASKS~: A list of commands(list of strings, one for each command)
+  
+~taskrunner-get-tasks-from-cache~: Retrieve the tasks from the cache. Returns ~nil~
+or a list of strings where each string is a command. It accepts one optional
+argument:
+- ~DIR~: The project root for which to retrieve the tasks from the cache for(string)
+  
+~taskrunner-add-to-build-cache~: Add a build folder path to the cache. Accepts two
+arguments:
+- ~ROOT~: Root of the project(string)
+- ~DIR~: Path to build folder(string)
+
+~taskrunner-get-build-cache~: Retrieve the build folder for a project. It accepts
+one optional argument:
+- ~DIR~: The path to the project root(string)
+  
+~taskrunner-add-command-to-history~: Add a command to the history log. Accepts two
+arguments:
+- ~ROOT~: The root of the project(string)
+- ~COMMAND~: The command to be added(string)
+  
+~taskrunner-get-commands-from-history~: Retrieve the command history for a
+project. It accepts one optional argument:
+- ~ROOT~: The root of the project(string)
+
+~taskrunner-invalidate-build-cache~: Reset the build cache/clear the hashmap
+~taskrunner-invalidate-last-command-cache~: Reset the last ran command cache/clear the hashmap
+~taskrunner-invalidate-command-history-cache~: Reset the command history cache/clear the hashmap
+~taskrunner-invalidate-tasks-cache~: Reset the tasks cache/clear the hashmap
 *** Cache file operations
 - ~taskrunner-read-cache-file~: Read the cache file called ~taskrunner-tasks.eld~
   and load all caches with its contents. This will overwrite all caches with the
