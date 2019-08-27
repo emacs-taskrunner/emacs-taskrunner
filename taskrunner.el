@@ -167,8 +167,6 @@ use the project root for the currently visited buffer."
 
 (defun taskrunner-set-last-command-ran (ROOT DIR COMMAND)
   "Set the COMMAND ran in DIR to be the last command ran for project in ROOT."
-  ;; Add the command to history
-  (taskrunner-add-command-to-history ROOT COMMAND)
   (puthash (intern ROOT) (list DIR COMMAND) taskrunner-last-command-cache))
 
 (defun taskrunner-add-to-tasks-cache (ROOT TASKS)
@@ -592,7 +590,11 @@ If DIR is non-nil then tasks are gathered from that directory."
       ,(async-inject-variables "\\`load-path\\'")
       ;; Inject all variables from the taskrunner package
       ,(async-inject-variables "taskrunner-.*")
+      ;; For cl-map's
       (require 'cl-lib)
+      ;; Used to enable the use of package-installed-p in taskrunner
+      (require 'package)
+      ;; Main package
       (require 'taskrunner)
       (let* ((proj-root (if taskrunner--async-process-dir
                             taskrunner--async-process-dir
@@ -813,6 +815,53 @@ This is not meant to be used for anything seen by the user."
     (insert "\nCommand history cache contents\n")
     (taskrunner--insert-hashmap-contents taskrunner-command-history-cache)
     (switch-to-buffer buff)))
+
+;; Check if the notification library is installed and as an extra step check if
+;; Emacs is compiled with "NOTIFY". If those are present then load the functions.
+;; TODO: Will this work with windows?
+(when (and (package-installed-p 'notifications)
+           (string-match-p "NOTIFY" system-configuration-features))
+  (require 'notifications)
+  (defun taskrunner--show-notification (BUFF MSG)
+    "Show a desktop notification when compilation/comint mode is finished running"
+    (if (or (fboundp 'notifications-notify)
+            (fboundp 'w32-notifications-notify))
+        (let ((buff-name (buffer-name BUFF))
+              (program-name)
+              (task-name)
+              (display-string))
+          (when (string-match-p taskrunner--buffer-name-regexp buff-name)
+            (setq program-name (cadr (split-string buff-name "-")))
+            (setq task-name (car (split-string
+                                  (caddr (split-string buff-name "-")) "*")))
+            (setq display-string (concat "The command \""  program-name " "
+                                         task-name "\" "
+                                         "has finished!"))
+            ;; Decide the system type
+            (cond
+             ((or (equal system-type 'darwin)
+                  (equal system-type 'gnu/linux))
+              (notifications-notify
+               :title "Emacs Taskrunner"
+               :body display-string
+               :urgency 'low))
+             ((equal system-type 'windows-nt)
+              (w32-notification-notify
+               :title "Emacs Taskrunner"
+               :body display-string
+               :level 'low))
+             )))))
+
+  (defun taskrunner-notification-on ()
+    "Turn on notifications which are shown when a task ran with taskrunner is finished.."
+    (unless (member 'taskrunner--show-notification compilation-finish-functions)
+      (push 'taskrunner--show-notification compilation-finish-functions)))
+
+  (defun taskrunner-notification-off ()
+    "Turn off notifications which are shown when a task ran with taskrunner is finished.."
+    (if (member 'taskrunner--show-notification compilation-finish-functions)
+        (setq compilation-finish-functions (remove 'taskrunner--show-notification
+                                                   compilation-finish-functions)))))
 
 ;;;; Footer
 
