@@ -272,7 +272,7 @@ The user will be asked to confirm this action before deleting the file."
 
 ;; Functions/Macros related to finding files which signal what type of build
 ;; system/taskrunner is used
-(defmacro taskrunner-buffer-matching-regexp (REGEXP DIRECTORY FILE-LIST KEY MATCH-LIST)
+(defmacro taskrunner-files-matching-regexp (REGEXP DIRECTORY FILE-LIST KEY MATCH-LIST)
   "Create a list containing all file names in FILE-LIST which match REGEXP.
 If there are any matches then the list of matching names is added
 to alist MATCH-LIST with key KEY.  Each list element has the form:
@@ -323,7 +323,7 @@ to a single file."
         (files '()))
 
     (if (member "package.json" proj-root-files)
-        (push (list "NPM" (expand-file-name "package.json" DIR)) files))
+        (push (list (intern (taskrunner--yarn-or-npm DIR)) (expand-file-name "package.json" DIR)) files))
 
     (cond
      ((member "gulpfile.js" proj-root-files)
@@ -339,21 +339,21 @@ to a single file."
 
     (cond
      ((member "Jakefile.js" proj-root-files)
-      (push (list "JAKE" (expand-file-name "Jakefile.js" DIR)) files))
+      (push (list 'JAKE (expand-file-name "Jakefile.js" DIR)) files))
      ((member "Jakefile.coffee" proj-root-files)
-      (push (list "JAKE" (expand-file-name "Jakefile.coffee" DIR)) files))
+      (push (list 'JAKE (expand-file-name "Jakefile.coffee" DIR)) files))
      ((member "Jakefile" proj-root-files)
-      (push (list "JAKE" (expand-file-name "Jakefile" DIR)) files)))
+      (push (list 'JAKE (expand-file-name "Jakefile" DIR)) files)))
 
     (cond
      ((member "rakefile" proj-root-files)
-      (push (list "RAKE" (expand-file-name "rakefile" DIR)) files))
+      (push (list 'RAKE (expand-file-name "rakefile" DIR)) files))
      ((member "Rakefile" proj-root-files)
-      (push (list "RAKE" (expand-file-name "Rakefile" DIR)) files))
+      (push (list 'RAKE (expand-file-name "Rakefile" DIR)) files))
      ((member "rakefile.rb" proj-root-files)
-      (push (list "RAKE" (expand-file-name "rakefile.rb" DIR)) files))
+      (push (list 'RAKE (expand-file-name "rakefile.rb" DIR)) files))
      ((member "Rakefile.rb" proj-root-files)
-      (push (list "RAKE" (expand-file-name "Rakefile.rb" DIR)) files)))
+      (push (list 'RAKE (expand-file-name "Rakefile.rb" DIR)) files)))
 
     (if (member "Cask" proj-root-files)
         (push (list 'CASK (expand-file-name "Cask" DIR)) files))
@@ -391,6 +391,15 @@ to a single file."
     (if (member "Makefile.yaml" proj-root-files)
         (push (list 'CARGO-MAKE (expand-file-name "Makefile.yaml" DIR)) files))
 
+    (if (member "tusk.yml" proj-root-files)
+        (push (list 'TUSK (expand-file-name "tusk.yml" DIR)) files))
+
+    (if (member "buidler.config.js" proj-root-files)
+        (push (list 'BUIDLER (expand-file-name "buidler.config.js" DIR)) files))
+
+    (if (member "dobi.yml" proj-root-files)
+        (push (list 'DOBI (expand-file-name "dobi.yml" DIR)) files))
+
     ;; Justfile names are case insensitive. Will need to add support for that
     ;; but this will be at a later time. For now, add support for the(what I
     ;; think are) most common names
@@ -410,11 +419,11 @@ to a single file."
      ((member "GNUmakefile" proj-root-files)
       (push (list 'MAKE (expand-file-name "GNUmakefile" DIR)) files)))
 
-    (taskrunner-buffer-matching-regexp ".*gradle.*" DIR proj-root-files 'GRADLE files)
+    (taskrunner-files-matching-regexp ".*gradle.*" DIR proj-root-files 'GRADLE files)
 
-    (taskrunner-buffer-matching-regexp ".*cabal.*" DIR proj-root-files 'CABAL files)
+    (taskrunner-files-matching-regexp ".*cabal.*" DIR proj-root-files 'CABAL files)
 
-    (taskrunner-buffer-matching-regexp "go\\.\\(mod\\|sum\\)" DIR proj-root-files 'GO files)
+    (taskrunner-files-matching-regexp "go\\.\\(mod\\|sum\\)" DIR proj-root-files 'GO files)
 
     files))
 
