@@ -687,12 +687,24 @@ from the build cache."
                               (projectile-project-root)))
          (taskrunner-program (downcase (car (split-string TASK " "))))
          (task-name (cadr (split-string TASK " ")))
-         (command))
+         (command)
+         ;; Set the exec path to include all binaries so the taskrunners can be found
+         ;; This should not produce a problem if the binaries/folders do not exist
+         (exec-path (append exec-path (list taskrunner-go-task-bin-path
+                                            taskrunner-mage-bin-path
+                                            taskrunner-tusk-bin-path
+                                            taskrunner-doit-bin-path
+                                            taskrunner-dobi-bin-path))))
     (when ASK
       (setq task-name (read-string (concat "Arguments to add to command: ")
                                    task-name)))
+
+    ;; Add the commands to history and set the new last command ran
+    (taskrunner-set-last-command-ran (projectile-project-root) default-directory TASK)
+    (taskrunner-add-command-to-history (projectile-project-root) TASK)
+
     ;; Special case handling for commands which use the build cache or which need
-    ;; extra arguments provided to run a specific task
+    ;; extra arguments provided to run a specific task.
     (cond ((string-equal "ninja" taskrunner-program)
            (when (and USE-BUILD-CACHE
                       (taskrunner-get-build-cache default-directory))
@@ -707,16 +719,10 @@ from the build cache."
            (setq command (concat taskrunner-program " " "run" " " task-name)))
           ((string-equal "yarn" taskrunner-program)
            (setq command (concat taskrunner-program " " "run" " " task-name)))
+          ((string-equal "dobi" taskrunner-program)
+           (setq command (concat taskrunner-dobi-bin-name " " task-name)))
           (t
            (setq command (concat taskrunner-program " " task-name))))
-
-    ;; Add to last command cache(overwrites previous command) Need to add
-    ;; special handling for yarn/npm since they require the run keyword inserted
-    ;; between taskname and npm/yarn
-    (if (or (string-equal taskrunner-program "npm")
-            (string-equal taskrunner-program "yarn"))
-        (taskrunner-set-last-command-ran (projectile-project-root) default-directory (concat taskrunner-program " " task-name))
-      (taskrunner-set-last-command-ran (projectile-project-root) default-directory command))
 
     (compilation-start command t (taskrunner--generate-compilation-buffer-name taskrunner-program task-name) t)))
 

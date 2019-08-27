@@ -44,7 +44,7 @@
   :group 'taskrunner
   :type 'string)
 
-(defcustom taskruner-dobi-bin-name "dobi-linux"
+(defcustom taskrunner-dobi-bin-name "dobi-linux"
   "Name of the Dobi taskrunner binary."
   :group 'taskrunner
   :type 'string)
