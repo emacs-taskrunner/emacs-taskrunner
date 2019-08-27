@@ -47,6 +47,27 @@ Here are the caches and their respective uses:
 If you use this library, you should never have to interact with the hashmaps
 "manually". There are getter/setter functions for each cache. They can be found below.
 ** Functions
+*** Getters and setters for caches
+*** Cache file operations
+- ~taskrunner-read-cache-file~: Read the cache file called ~taskrunner-tasks.eld~
+  and load all caches with its contents. This will overwrite all caches with the
+  contents of the file. As a sidenote, this file is only read once at startup.
+- ~taskrunner-write-cache-file~: Serialize all hashmaps and write them to the file
+  called ~taskrunner-tasks.eld~ located in the ~.emacs~ directory. This function
+  will overwrite all contents of the task cache file.
+- ~taskrunner-delete-cache-file~: This will delete the cache file. It does not
+  create a new file in its place. ~taskrunner-write-cache-file~ will do so if necessary.
+*** Retrieving tasks
+*** Refreshing the cache
+*** Debug
+To debug the cache contents, you can use:
+- ~taskrunner--debug-show-cache-contents~: This will create a temporary buffer and
+  pretty print all of the cache contents with one section for each cache. The
+  format is 2 columns with column 1 being the key and column 2 being the value
+  for that key.
+
+If you need to debug anything else then use the built in debugging tools that
+Emacs provides.
 ** Variables
 ** Async vs Sync
 ** Threads vs ~emacs-async~ 
