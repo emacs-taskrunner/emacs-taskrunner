@@ -267,5 +267,35 @@ This function assumes that you have `npx' installed."
       (set-buffer (taskrunner--make-task-buff-name "buidler"))
       (taskrunner--get-buidler-tasks-from-buffer))))
 
+(defvar taskrunner-dobi-bin-path "~/")
+(defvar taskruner-dobi-bin-name "dobi-linux")
+
+(defun taskrunner--get-dobi-tasks-from-buffer ()
+  "Retrieve all dobi tasks from buffer if any are available."
+  (goto-char (point-min))
+  (let ((beg (search-forward-regexp "Resources:\n" nil t))
+        (tasks '()))
+    (when beg
+      (narrow-to-region (point-at-bol) (point-max))
+      (dolist (line (split-string (buffer-string) "\n"))
+        (push (concat "DOBI" " " (car (split-string line split-string-default-separators t))) tasks)))
+    ;; The last line read is a blank one. This removes the blank task if any
+    ;; have been collected
+    (when tasks
+      (pop tasks))
+    (kill-current-buffer)
+    tasks))
+
+(defun taskrunner-get-dobi-tasks (DIR)
+  "Retrieve the dobi tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"DOBI TASK1\" \"DOBI TASK2\"...)"
+  (let ((default-directory DIR)
+        (exec-path (cons taskrunner-dobi-bin-path2 exec-path)))
+    (call-process taskruner-dobi-bin-name nil (taskrunner--make-task-buff-name "dobi") nil "list")
+    (with-temp-buffer
+      (set-buffer (taskrunner--make-task-buff-name "dobi"))
+      (taskrunner--get-dobi-tasks-from-buffer))))
+
 (provide 'taskrunner-general)
 ;;; taskrunner-general.el ends here
