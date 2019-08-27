@@ -193,5 +193,44 @@ This function returns a list of the form:
       (set-buffer (taskrunner--make-task-buff-name "cargo-make"))
       (taskrunner--get-cargo-make-tasks-from-buffer))))
 
+(defun taskrunner--get-tust-tasks-from-buffer ()
+  "Retrieve all tusk tasks from buffer if any exist."
+  (interactive)
+  (goto-char (point-min))
+  (let ((beg (search-forward-regexp "^Tasks:" nil t))
+        (end)
+        (tasks '()))
+    (when beg
+      (setq beg
+            (progn
+              (forward-line 1)
+              (point-at-bol)))
+      (setq end (progn
+                  (search-forward-regexp "^$" nil t)
+                  (point-at-bol)))
+      (narrow-to-region beg end)
+      (dolist (elem (split-string (buffer-string) "\n"))
+        (push (concat "TUSK" " " (car (split-string elem " " t))) tasks))
+      (kill-current-buffer))
+    (when tasks
+      (pop tasks))
+    tasks))
+
+(defcustom taskrunner-tusk-bin-path "~/clones/tusk-test/"
+  "Path to the Tusk taskrunner binary."
+  :group 'taskrunner
+  :type 'string)
+
+(defun taskrunner-get-tusk-tasks (DIR)
+  "Retrieve the Tusk tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"TUSK TASK1\" \"TUSK TASK2\"...)"
+  (let ((default-directory DIR)
+        (exec-path (cons taskrunner-tusk-bin-path exec-path)))
+    (call-process "tusk" nil (taskrunner--make-task-buff-name "tusk") nil "--help")
+    (with-temp-buffer
+      (set-buffer (taskrunner--make-task-buff-name "tusk"))
+      (taskrunner--get-tust-tasks-from-buffer))))
+
 (provide 'taskrunner-general)
 ;;; taskrunner-general.el ends here
