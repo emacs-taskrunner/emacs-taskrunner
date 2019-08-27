@@ -234,16 +234,16 @@ systems/frontends listed below.
 **** User interfaces
 - [X] ivy
 - [X] helm
-- [X] ido
+- [ ] ido (Work in progress. Coming Soon!)
 *** Planning to add support for
 - [ ] Apache maven
 - [ ] [[https://waf.io/][waf]] 
 - [ ] [[https://github.com/pantsbuild/pants][pants]] 
+- [ ] [[https://github.com/reisraff/phulp][phulp]] 
+- [ ] [[https://github.com/zaaack/foy][foy]] 
 - [ ] tasks.json(VSCode)
 - [ ] Ninja
 - [ ] sbt
 - [ ] Buck
 - [ ] Bazel
 - [ ] msbuild(Maybe)
-- [ ] [[https://github.com/zaaack/foy][foy]] 
-- [ ] [[https://github.com/reisraff/phulp][phulp]] 
