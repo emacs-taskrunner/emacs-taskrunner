@@ -39,6 +39,16 @@
   :group 'taskrunner
   :type 'string)
 
+(defcustom taskrunner-dobi-bin-path "~/"
+  "Path to the folder containing the Dobi taskrunner binary."
+  :group 'taskrunner
+  :type 'string)
+
+(defcustom taskruner-dobi-bin-name "dobi-linux"
+  "Name of the Dobi taskrunner binary."
+  :group 'taskrunner
+  :type 'string)
+
 ;;;; Functions
 (defun taskrunner--get-go-tasks-from-buffer ()
   "Retrieve all go tasks from the currently visited buffer.
@@ -266,9 +276,6 @@ This function assumes that you have `npx' installed."
     (with-temp-buffer
       (set-buffer (taskrunner--make-task-buff-name "buidler"))
       (taskrunner--get-buidler-tasks-from-buffer))))
-
-(defvar taskrunner-dobi-bin-path "~/")
-(defvar taskruner-dobi-bin-name "dobi-linux")
 
 (defun taskrunner--get-dobi-tasks-from-buffer ()
   "Retrieve all dobi tasks from buffer if any are available."
