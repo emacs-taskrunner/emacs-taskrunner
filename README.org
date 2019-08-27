@@ -108,7 +108,8 @@ There are two main functions used to retrieve tasks:
 to indicate which directory you would like to retrieve tasks from. If this
 argument is not provided then the result of ~projectile-project-root~ is used
 instead. If the cache file is not loaded then this function will load it
-automatically whenever called.
+automatically whenever called. Additionally, it will load the tasks/build cache with
+the new files retrieved.
 
 ~taskrunner-get-tasks-async~: This function retrieves all tasks *asynchronously*. It
 accepts two arguments. The first is a function which should accept *one*
@@ -118,12 +119,40 @@ are retrieved in the background, they will be passed to the function. The second
 argument is a directory path and it is optional. Just like the synchronous
 function, it is a path to the directory where you would like to look for
 tasks. If not provided, the output of ~projectile-project-root~ is used. This
-function will load the cache file automatically.
+function will load the cache file automatically. Additionally, it will load the
+tasks/build caches with the new files retrieved.
 
 To retrieve the tasks asynchronously, this function uses ~emacs-async~ in the
 background. This spawns a new process, gathers the tasks and passes the list
 generated(whether empty or not) to the current Emacs instance which called it.
+
+~taskrunner-collect-tasks~: Retrieve all tasks for a project and return them as a
+list of the form ~("TASKRUNNER TASK1" "TASKRUNNER TASK2"...)~. This is a low level
+function. It runs *synchronously* and simply retrieves all of the tasks, puts them
+in a list and returns them. There should be no need to use this unless you do
+not want to update the tasks cache. This function will *automatically update the
+build cache* whenever it encounters a ~Makefile~ or a ~ninja.build~. 
+It accepts one argument:
+- ~DIR~: The path to the directory from which to collect tasks from(string)
 *** Refreshing the cache
+Since the tasks are cached and retrieved from the cache whenever possible, they
+might become "stale". If tasks are cached for a certain project and the user
+adds more tasks then they might not be displayed. To deal with this issue, the
+following functions are provided:
+
+~taskrunner-refresh-cache-sync~: Refreshes the cache for the project
+*synchronously*. It accepts one optional argument:
+- ~DIR~: The path to the directory for which to refresh/gather new tasks
+  from(string)
+
+~taskrunner-refresh-cache-async~: Refresh the cache for the project
+asynchronously. It accepts one mandatory and one optional argument:
+- ~FUNC~: A function which accepts only one argument. The new list of tasks will
+  be passed to this function when it is ready. It will be a list of strings of
+  the form ~("TASKRUNNER TASK1" "TASKRUNNER TASK2")~.
+- ~DIR(OPTIONAL)~: The path to the directory for which to refresh/gather new tasks
+  from(string). Defaults to ~projectile-project-root~.
+*** Others
 *** Debug
 To debug the cache contents, you can use:
 - ~taskrunner--debug-show-cache-contents~: This will create a temporary buffer and
