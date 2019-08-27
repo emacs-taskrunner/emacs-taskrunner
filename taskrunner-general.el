@@ -34,6 +34,11 @@
   :group 'taskrunner
   :type 'string)
 
+(defcustom taskrunner-tusk-bin-path "~/clones/tusk-test/"
+  "Path to the Tusk taskrunner binary."
+  :group 'taskrunner
+  :type 'string)
+
 ;;;; Functions
 (defun taskrunner--get-go-tasks-from-buffer ()
   "Retrieve all go tasks from the currently visited buffer.
@@ -193,9 +198,8 @@ This function returns a list of the form:
       (set-buffer (taskrunner--make-task-buff-name "cargo-make"))
       (taskrunner--get-cargo-make-tasks-from-buffer))))
 
-(defun taskrunner--get-tust-tasks-from-buffer ()
+(defun taskrunner--get-tusk-tasks-from-buffer ()
   "Retrieve all tusk tasks from buffer if any exist."
-  (interactive)
   (goto-char (point-min))
   (let ((beg (search-forward-regexp "^Tasks:" nil t))
         (end)
@@ -210,16 +214,13 @@ This function returns a list of the form:
                   (point-at-bol)))
       (narrow-to-region beg end)
       (dolist (elem (split-string (buffer-string) "\n"))
-        (push (concat "TUSK" " " (car (split-string elem " " t))) tasks))
-      (kill-current-buffer))
+        (push (concat "TUSK" " " (car (split-string elem " " t))) tasks)))
+    (kill-current-buffer)
+    ;; The last line read is a blank one. This removes the blank task if any
+    ;; have been collected
     (when tasks
       (pop tasks))
     tasks))
-
-(defcustom taskrunner-tusk-bin-path "~/clones/tusk-test/"
-  "Path to the Tusk taskrunner binary."
-  :group 'taskrunner
-  :type 'string)
 
 (defun taskrunner-get-tusk-tasks (DIR)
   "Retrieve the Tusk tasks for the project in directory DIR.
@@ -230,7 +231,41 @@ This function returns a list of the form:
     (call-process "tusk" nil (taskrunner--make-task-buff-name "tusk") nil "--help")
     (with-temp-buffer
       (set-buffer (taskrunner--make-task-buff-name "tusk"))
-      (taskrunner--get-tust-tasks-from-buffer))))
+      (taskrunner--get-tusk-tasks-from-buffer))))
+
+(defun taskrunner--get-buidler-tasks-from-buffer ()
+  "Retrieve all tasks from the buidler if any are available."
+  (goto-char (point-min))
+  (let ((beg (search-forward-regexp "^AVAILABLE TASKS:\n\n" nil t))
+        (end)
+        (tasks '()))
+    (when beg
+      (setq beg (point-at-bol))
+      (setq end
+            (progn
+              (search-forward-regexp "^$" nil t)
+              (point-at-bol)))
+      (narrow-to-region beg end)
+      (dolist (line (split-string (buffer-string) "\n"))
+        (push (concat "BUIDLER" " " (car (split-string line split-string-default-separators t))) tasks)))
+    (kill-current-buffer)
+    ;; The last line read is a blank one. This removes the blank task if any
+    ;; have been collected
+    (when tasks
+      (pop tasks))
+    tasks))
+
+(defun taskrunner-get-buidler-tasks (DIR)
+  "Retrieve the Buidler tasks for the project in directory DIR.
+This function returns a list of the form:
+\(\"BUIDLER TASK1\" \"BUIDLER TASK2\"...)
+
+This function assumes that you have `npx' installed."
+  (let ((default-directory DIR))
+    (call-process "npx" nil (taskrunner--make-task-buff-name "buidler") nil "buidler" "--help")
+    (with-temp-buffer
+      (set-buffer (taskrunner--make-task-buff-name "buidler"))
+      (taskrunner--get-buidler-tasks-from-buffer))))
 
 (provide 'taskrunner-general)
 ;;; taskrunner-general.el ends here
