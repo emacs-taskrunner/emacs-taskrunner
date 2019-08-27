@@ -58,6 +58,28 @@ If you use this library, you should never have to interact with the hashmaps
 - ~taskrunner-delete-cache-file~: This will delete the cache file. It does not
   create a new file in its place. ~taskrunner-write-cache-file~ will do so if necessary.
 *** Retrieving tasks
+There are two main functions used to retrieve tasks:
+
+~taskrunner-get-tasks-sync~: This functions retrieves all tasks
+*synchronously*. It accepts one optional argument called ~DIR~ which can be used
+to indicate which directory you would like to retrieve tasks from. If this
+argument is not provided then the result of ~projectile-project-root~ is used
+instead. If the cache file is not loaded then this function will load it
+automatically whenever called.
+
+~taskrunner-get-tasks-async~: This function retrieves all tasks *asynchronously*. It
+accepts two arguments. The first is a function which should accept *one*
+argument. The argument will be either ~nil/empty list~ or it will be a list of
+tasks of the form ~("TASKRUNNER TARGET2" "TASKRUNNER TARGET2"...)~. When the tasks
+are retrieved in the background, they will be passed to the function. The second
+argument is a directory path and it is optional. Just like the synchronous
+function, it is a path to the directory where you would like to look for
+tasks. If not provided, the output of ~projectile-project-root~ is used. This
+function will load the cache file automatically.
+
+To retrieve the tasks asynchronously, this function uses ~emacs-async~ in the
+background. This spawns a new process, gathers the tasks and passes the list
+generated(whether empty or not) to the current Emacs instance which called it.
 *** Refreshing the cache
 *** Debug
 To debug the cache contents, you can use:
