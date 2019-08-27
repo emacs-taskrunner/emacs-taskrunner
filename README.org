@@ -44,8 +44,9 @@ Here are the caches and their respective uses:
   ~taskrunner-tasks-cache~. The size of the history is limited by the variable
   ~taskrunner-command-history-size~ and its default value is 10.
 *** Interacting with the caches
-If you use this library, you should never have to interact with the hashmaps
-"manually". There are getter/setter functions for each cache. They can be found below.
+If you use this library, you should never have to interact with the caches/hashmaps
+"manually". There are getter/setter functions for each cache. They can be found
+in the ~Functions~ section below.
 ** Functions
 *** Getters and setters for caches
 ~taskrunner-get-last-command-ran~: Retrieves the last command ran and returns
@@ -152,6 +153,7 @@ asynchronously. It accepts one mandatory and one optional argument:
 - ~DIR(OPTIONAL)~: The path to the directory for which to refresh/gather new tasks
   from(string). Defaults to ~projectile-project-root~.
 *** Others
+This section contains functions which are quite general.
 *** Debug
 To debug the cache contents, you can use:
 - ~taskrunner--debug-show-cache-contents~: This will create a temporary buffer and
@@ -162,6 +164,18 @@ To debug the cache contents, you can use:
 If you need to debug anything else then use the built in debugging tools that
 Emacs provides.
 ** Variables
+Here is a list of variables used in the library. The majority should not be
+set/controlled manually.
+
+- ~taskrunner-cache-file-read~: Indicates whether or not the cache file has been
+  read for the current session. It is only set once when the file is first read.
+- ~taskrunner-async-process-dir~: TODO
+- ~taskrunner--buffer-name-regexp~: All buffers which run a command are
+  compilation buffers with a special name. This name starts with ~*taskrunner-~
+  and the rest is dependent on the taskrunner and command ran. This is a regexp
+  used to find all such buffers so they can be grouped in a list.
+- ~taskrunner-command-history-size~: The size of the command history for EACH
+  project cached. Its default is ~10~.
 * Design Choices
 ** Async vs Sync
 This library comes with both sync and async functions. Originally, everything
