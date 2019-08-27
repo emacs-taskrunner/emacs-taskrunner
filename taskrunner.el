@@ -477,6 +477,15 @@ updating the cache."
     (if (member "maskfile.md" work-dir-files)
         (setq tasks (append tasks (taskrunner-get-mask-tasks DIR))))
 
+    (if (member "tusk.yml" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-tusk-tasks DIR))))
+
+    (if (member "buidler.config.js" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-buidler-tasks DIR))))
+
+    (if (member "dobi.yml" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-dobi-tasks DIR))))
+
     (if (or (member "justfile" work-dir-files)
             (member "Justfile" work-dir-files)
             (member "JUSTFILE" work-dir-files))
@@ -703,8 +712,9 @@ from the build cache."
     (taskrunner-set-last-command-ran (projectile-project-root) default-directory TASK)
     (taskrunner-add-command-to-history (projectile-project-root) TASK)
 
-    ;; Special case handling for commands which use the build cache or which need
-    ;; extra arguments provided to run a specific task.
+    ;; Command to be ran is built here.  Some taskrunners/build systems require
+    ;; special handling(cache lookups/prepending/appending some extra command to
+    ;; run the task...) and all of this is done here
     (cond ((string-equal "ninja" taskrunner-program)
            (when (and USE-BUILD-CACHE
                       (taskrunner-get-build-cache default-directory))
@@ -719,6 +729,8 @@ from the build cache."
            (setq command (concat taskrunner-program " " "run" " " task-name)))
           ((string-equal "yarn" taskrunner-program)
            (setq command (concat taskrunner-program " " "run" " " task-name)))
+          ((string-equal "buidler" taskrunner-program)
+           (setq command (concat "npx" " " taskrunner-program " " task-name)))
           ((string-equal "dobi" taskrunner-program)
            (setq command (concat taskrunner-dobi-bin-name " " task-name)))
           (t
