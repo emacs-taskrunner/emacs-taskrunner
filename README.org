@@ -225,6 +225,7 @@ systems/frontends listed below.
 - [X] [[https://github.com/sagiegurari/cargo-make][cargo-make]]
 - [X] [[https://buidler.dev/][buidler]] 
 - [X] [[https://github.com/rliebz/tusk][Tusk]] 
+- [X] [[https://dnephin.github.io/dobi/install.html][dobi]] 
 - [X] cargo(Limited Support)
 - [X] go compiler(Limited support)
 - [X] Cask(Limited Support)
@@ -245,5 +246,4 @@ systems/frontends listed below.
 - [ ] Bazel
 - [ ] msbuild(Maybe)
 - [ ] [[https://github.com/zaaack/foy][foy]] 
-- [ ] [[https://dnephin.github.io/dobi/install.html][dobi]] 
 - [ ] [[https://github.com/reisraff/phulp][phulp]] 
