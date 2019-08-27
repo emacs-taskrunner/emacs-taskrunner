@@ -13,7 +13,43 @@ tasks do not have to be retrieved over and over again.
  open a pull request/issue on this repository. Thanks
  
 * API
-TODO: Document the API
+** On caches and speed
+~Taskrunner~ is a library made to retrieve and run tasks from several build
+systems/taskrunners. Retrieving the tasks can be costly since it requires:
+- time
+- resources(spawning a whole new process)
+To attempt to reduce these costs as much as possible, ~taskrunner~ uses a series
+of caches to store the retrieved information. These caches are nothing more than
+simple hashmaps where the keys are often times the symbol representation of the
+path to the project root. The hashmaps use a symbol instead of a string
+since(according to the elisp manual) symbols are faster to compare than strings
+which means faster retrieval. 
+
+Here are the caches and their respective uses:
+- ~taskrunner-last-command-cache~: Used to store the last command ran in the
+  current project. It is a hashmap with project root as key and a string
+  containing the last command as a value.
+- ~taskrunner-buld-cache~: Used to store the build directory for ~CMake/Meson/Make~
+  project. This is usually the directory which contains either a ~Makefile~ or a
+  ~ninja.buld~ file. The key is the project root and the value is a string which
+  is the path to the build directory.
+- ~taskrunner-tasks-cache~: This is the main and most important cache. It stores
+  all of the tasks for the current project in order for them to be retrieved
+  quickly and to avoid spawning a process unless absolutely necessary. The key
+  is the project root and the value is a list of strings of the form
+  ~TASKRUNNER-NAME COMMAND~.
+- ~taskrunner-command-history-cache~: This cache stores the commands ran in the
+  current project. The key is again the project root and the value is a list of
+  strings where each contains a command. The format is the same as the
+  ~taskrunner-tasks-cache~. The size of the history is limited by the variable
+  ~taskrunner-command-history-size~ and its default value is 10.
+*** Interacting with the caches
+If you use this library, you should never have to interact with the hashmaps
+"manually". There are getter/setter functions for each cache. They can be found below.
+** Functions
+** Variables
+** Async vs Sync
+** Threads vs ~emacs-async~ 
 * Project Status
 Currently, this project can is stable and can be used for the following
 systems/frontends listed below.
