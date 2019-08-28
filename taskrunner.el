@@ -4,7 +4,7 @@
 
 ;; Author: Yavor Konstantinov <ykonstantinov1 AT gmail DOT com>
 ;; URL: https://github.com/emacs-taskrunner/emacs-taskrunner
-;; Version: 0.5
+;; Version: 0.6
 ;; Package-Requires: ((emacs "25.1"))
 ;; Keywords: build-system taskrunner build task-runner tasks convenience
 
