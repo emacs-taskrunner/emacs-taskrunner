@@ -896,7 +896,11 @@ This is not meant to be used for anything seen by the user."
 ;; Check if the notification library is installed and as an extra step check if
 ;; Emacs is compiled with "NOTIFY". If those are present then load the functions.
 ;; TODO: Will this work with windows?
-(when (and (package-installed-p 'notifications)
+
+;; Thanks to:
+;; https://stackoverflow.com/questions/7790382/how-to-determine-whether-a-package-is-installed-in-elisp
+;; for the tip about 'noerror in require
+(when (and (require 'notifications nil 'noerror)
            (string-match-p "NOTIFY" system-configuration-features))
   (require 'notifications)
   (defun taskrunner--show-notification (BUFF _)
