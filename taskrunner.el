@@ -305,7 +305,12 @@ If NO-OVERWRITE is non-nil then do not overwrite the cache file."
           (setq taskrunner-last-command-cache(nth 1 file-tasks))
           (setq taskrunner-build-cache (nth 2 file-tasks))
           (setq taskrunner-command-history-cache (nth 3 file-tasks))
-          (setq taskrunner-custom-command-cache (nth 4 file-tasks)))))))
+          ;; Length is checked for backwards compatibility.  The cache file will
+          ;; be overwritten soon but if the user installed this package before
+          ;; the new cache was added, trying to read in the new command cache
+          ;; will throw an error
+          (when (= (length file-tasks) 5)
+            (setq taskrunner-custom-command-cache (nth 4 file-tasks))))))))
 
 (defun taskrunner-write-cache-file ()
   "Save all tasks in the cache to the cache file in Emacs user directory."
@@ -884,6 +889,8 @@ This is not meant to be used for anything seen by the user."
     (taskrunner--insert-hashmap-contents taskrunner-build-cache)
     (insert "\nCommand history cache contents\n")
     (taskrunner--insert-hashmap-contents taskrunner-command-history-cache)
+    (insert "\nCustom commands cache contents\n")
+    (taskrunner--insert-hashmap-contents taskrunner-custom-command-cache)
     (switch-to-buffer buff)))
 
 ;; Check if the notification library is installed and as an extra step check if
