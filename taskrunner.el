@@ -706,8 +706,9 @@ from the build cache."
                                 DIR
                               (projectile-project-root)))
          (taskrunner-program (downcase (car (split-string TASK " "))))
-         (task-name (cadr (split-string TASK " ")))
-         (command)
+         ;; Concat the arguments since we might be rerunning a command with arguments from history
+         (task-name (mapconcat 'identity
+                               (cdr (split-string TASK " ")) " "))
          ;; Set the exec path to include all binaries so the taskrunners can be found
          ;; This should not produce a problem if the binaries/folders do not exist
          (exec-path (append exec-path (list taskrunner-go-task-bin-path
@@ -719,9 +720,12 @@ from the build cache."
       (setq task-name (read-string (concat "Arguments to add to command: ")
                                    task-name)))
 
-    ;; Add the commands to history and set the new last command ran
-    (taskrunner-set-last-command-ran (projectile-project-root) default-directory TASK)
-    (taskrunner-add-command-to-history (projectile-project-root) TASK)
+    ;; Add the commands to history and set the new last command ran The command
+    ;; is concatenated again so any arguments provided(if there are any) are saved
+    (taskrunner-set-last-command-ran (projectile-project-root) default-directory
+                                     (concat (upcase taskrunner-program) " " task-name))
+    (taskrunner-add-command-to-history (projectile-project-root)
+                                       (concat (upcase taskrunner-program) " " task-name))
 
     ;; Command to be ran is built here.  Some taskrunners/build systems require
     ;; special handling(cache lookups/prepending/appending some extra command to
@@ -747,6 +751,7 @@ from the build cache."
           (t
            (setq command (concat taskrunner-program " " task-name))))
 
+    (taskrunner-write-cache-file)
     (compilation-start command t (taskrunner--generate-compilation-buffer-name taskrunner-program task-name) t)))
 
 (defun taskrunner-rerun-last-task (DIR)
