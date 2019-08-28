@@ -222,15 +222,17 @@ command `projectile-project-root'"
                     (projectile-project-root))))
     (gethash (intern proj-dir) taskrunner-command-history-cache)))
 
-(defun taskrunner-add-custom-command (ROOT COMMAND)
-  "Add a custom command COMMAND to the cache for project in ROOT."
+(defun taskrunner-add-custom-command (ROOT COMMAND &optional NO-OVERWRITE)
+  "Add a custom command COMMAND to the cache for project in ROOT.
+If NO-OVERWRITE is non-nil then do not overwrite the cache file used for storage."
   (let ((comm-list (gethash (intern ROOT) taskrunner-custom-command-cache)))
     ;; If the list is not empty then simply append the new command
     (if comm-list
         (puthash (intern ROOT) (cons COMMAND comm-list) taskrunner-custom-command-cache)
-      (puthash (intern ROOT) (list COMMAND) taskrunner-custom-command-cache)
-      )
-    ))
+      (puthash (intern ROOT) (list COMMAND) taskrunner-custom-command-cache))
+    (unless NO-OVERWRITE
+      ;; Write to the cache file to make custom commands persist
+      (taskrunner-write-cache-file))))
 
 (defun taskrunner-get-custom-commands (&optional DIR)
   "Retrieve the list of custom commands for the currently visited project.
@@ -296,7 +298,8 @@ DIR.  Otherwise, use the output of command `projectile-project-root'."
           (setq taskrunner-tasks-cache (nth 0 file-tasks))
           (setq taskrunner-last-command-cache(nth 1 file-tasks))
           (setq taskrunner-build-cache (nth 2 file-tasks))
-          (setq taskrunner-command-history-cache (nth 3 file-tasks)))))))
+          (setq taskrunner-command-history-cache (nth 3 file-tasks))
+          (setq taskrunner-custom-command-cache (nth 4 file-tasks)))))))
 
 (defun taskrunner-write-cache-file ()
   "Save all tasks in the cache to the cache file in Emacs user directory."
@@ -305,7 +308,8 @@ DIR.  Otherwise, use the output of command `projectile-project-root'."
                           (list (prin1-to-string taskrunner-tasks-cache)
                                 (prin1-to-string taskrunner-last-command-cache)
                                 (prin1-to-string taskrunner-build-cache)
-                                (prin1-to-string taskrunner-command-history-cache)))
+                                (prin1-to-string taskrunner-command-history-cache)
+                                (prin1-to-string taskrunner-custom-command-cache)))
                   nil
                   taskrunner-cache-filepath)))
 
@@ -609,14 +613,15 @@ Warning: This function runs synchronously and will block Emacs!"
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root)))
-         (proj-tasks (taskrunner-get-tasks-from-cache proj-root)))
+         (proj-tasks (taskrunner-get-tasks-from-cache proj-root))
+         (custom-tasks (taskrunner-get-custom-commands proj-root)))
     ;; If the tasks do not exist, retrieve them first and then add to cache.
     (unless proj-tasks
       (setq proj-tasks (taskrunner-collect-tasks proj-root))
       (taskrunner-add-to-tasks-cache proj-root proj-tasks)
       (taskrunner-write-cache-file))
     ;; Return the tasks
-    proj-tasks))
+    (append custom-tasks proj-tasks)))
 
 (defun taskrunner--start-async-task-process (FUNC &optional DIR)
   "Run `emacs-async' to retrieve the tasks for the currently visited project.
@@ -649,9 +654,10 @@ If DIR is non-nil then tasks are gathered from that directory."
              (proj-tasks (taskrunner-collect-tasks proj-root)))
         (list proj-root proj-tasks taskrunner-build-cache)))
    (lambda (TARGETS)
-     (let ((proj-dir (nth 0 TARGETS))
-           (proj-tasks (nth 1 TARGETS))
-           (build-cache (nth 2 TARGETS)))
+     (let* ((proj-dir (nth 0 TARGETS))
+            (proj-tasks (nth 1 TARGETS))
+            (build-cache (nth 2 TARGETS))
+            (custom-tasks (taskrunner-get-custom-commands proj-dir)))
        (taskrunner-add-to-tasks-cache proj-dir proj-tasks)
        ;; Overwrite the build cache. It might or might not have been updated
        ;; with more directories
@@ -661,7 +667,7 @@ If DIR is non-nil then tasks are gathered from that directory."
        ;; present in FUNC
        (with-local-quit
          ;; Add custom tasks to output here
-         (funcall FUNC proj-tasks))))))
+         (funcall FUNC (append custom-tasks proj-tasks)))))))
 
 (defun taskrunner-get-tasks-async (FUNC &optional DIR)
   "Retrieve the tasks for the currently visited project asynchronously.
@@ -696,6 +702,8 @@ If DIR is non-nil then tasks are gathered from that directory."
     (if proj-tasks
         (with-local-quit
           ;; Add custom tasks here is the tasks do not need to be gathered
+          ;; The will appear at the "top" of the output if the fronend does not
+          ;; do any sorting
           (funcall FUNC (append custom-tasks proj-tasks)))
       (taskrunner--start-async-task-process FUNC proj-root))))
 
