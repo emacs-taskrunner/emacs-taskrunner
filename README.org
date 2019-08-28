@@ -17,6 +17,12 @@ To install this library, you will need the following dependencies:
 - Emacs version 25.1 and above
 - [[https://github.com/bbatsov/projectile][projectile]] 
 - [[https://github.com/jwiegley/emacs-async][emacs-async]] 
+
+In addition, you will also need to install one(or more if you would like) of
+these frontends:
+- [[https://github.com/emacs-taskrunner/ivy-taskrunner][ivy-taskrunner]] 
+- [[https://github.com/emacs-taskrunner/helm-taskrunner][helm-taskrunner]] 
+- Ido frontend is still in progress. Please use one of the other 2 for now.
 * API
 The API for taskrunner is slowly being documented [[file:api-doc.org][here]]. It is not yet complete
 but the majority of the basics are there.
