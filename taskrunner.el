@@ -246,22 +246,28 @@ This function will return a list of strings of the form:
                      (projectile-project-root))))
     (gethash (intern proj-root) taskrunner-custom-command-cache)))
 
-(defun taskrunner-delete-custom-command (ROOT COMMAND)
-  "Delete a custom command COMMAND for the project in directory ROOT."
+(defun taskrunner-delete-custom-command (ROOT COMMAND &optional NO-OVERWRITE)
+  "Delete a custom command COMMAND for the project in directory ROOT.
+If NO-OVERWRITE is non-nil then do not overwrite the cache file."
   (let ((command-list (gethash (intern ROOT) taskrunner-custom-command-cache)))
     (when command-list
       (setq command-list (remove COMMAND command-list))
       ;; Overwrite the custom commands
-      (puthash (intern ROOT) command-list taskrunner-custom-command-cache))))
+      (puthash (intern ROOT) command-list taskrunner-custom-command-cache)
+      (unless NO-OVERWRITE
+        (taskrunner-write-cache-file)))))
 
-(defun taskrunner-delete-all-custom-commands (&optional DIR)
+(defun taskrunner-delete-all-custom-commands (&optional DIR NO-OVERWRITE)
   "Delete all custom tasks for a project.
 If DIR is non-nil then delete the tasks for the project with root
-DIR.  Otherwise, use the output of command `projectile-project-root'."
+DIR.  Otherwise, use the output of command `projectile-project-root'.
+If NO-OVERWRITE is non-nil then do not overwrite the cache file."
   (let ((proj-root (if DIR
                        DIR
                      (projectile-project-root))))
-    (puthash (intern proj-root) nil taskrunner-custom-command-cache)))
+    (puthash (intern proj-root) nil taskrunner-custom-command-cache)
+    (unless NO-OVERWRITE
+      (taskrunner-write-cache-file))))
 
 ;; Invalidation functions for caches. These "reset" them
 (defun taskrunner-invalidate-build-cache ()
