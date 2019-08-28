@@ -299,7 +299,7 @@ This function returns a list of the form:
 \(\"DOBI TASK1\" \"DOBI TASK2\"...)"
   (let ((default-directory DIR)
         (exec-path (cons taskrunner-dobi-bin-path2 exec-path)))
-    (call-process taskruner-dobi-bin-name nil (taskrunner--make-task-buff-name "dobi") nil "list")
+    (call-process taskrunner-dobi-bin-name nil (taskrunner--make-task-buff-name "dobi") nil "list")
     (with-temp-buffer
       (set-buffer (taskrunner--make-task-buff-name "dobi"))
       (taskrunner--get-dobi-tasks-from-buffer))))
