@@ -854,7 +854,7 @@ This is not meant to be used for anything seen by the user."
                 (w32-notification-notify
                  :title "Emacs Taskrunner"
                  :body display-string
-                 :level 'low))))))))
+                 :level 'info))))))))
 
   (defun taskrunner-notification-on ()
     "Turn on notifications which are shown when a task ran with taskrunner is finished.."
