@@ -265,7 +265,7 @@ If NO-OVERWRITE is non-nil then do not overwrite the cache file."
   (let ((proj-root (if DIR
                        DIR
                      (projectile-project-root))))
-    (puthash (intern proj-root) nil taskrunner-custom-command-cache)
+    (remhash (intern proj-root) taskrunner-custom-command-cache)
     (unless NO-OVERWRITE
       (taskrunner-write-cache-file))))
 
