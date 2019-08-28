@@ -822,35 +822,39 @@ This is not meant to be used for anything seen by the user."
 (when (and (package-installed-p 'notifications)
            (string-match-p "NOTIFY" system-configuration-features))
   (require 'notifications)
-  (defun taskrunner--show-notification (BUFF MSG)
+  (defun taskrunner--show-notification (BUFF _)
     "Show a desktop notification when compilation/comint mode is finished running"
-    (if (or (fboundp 'notifications-notify)
-            (fboundp 'w32-notifications-notify))
-        (let ((buff-name (buffer-name BUFF))
-              (program-name)
-              (task-name)
-              (display-string))
-          (when (string-match-p taskrunner--buffer-name-regexp buff-name)
-            (setq program-name (cadr (split-string buff-name "-")))
-            (setq task-name (car (split-string
-                                  (caddr (split-string buff-name "-")) "*")))
-            (setq display-string (concat "The command \""  program-name " "
-                                         task-name "\" "
-                                         "has finished!"))
-            ;; Decide the system type
-            (cond
-             ((or (equal system-type 'darwin)
-                  (equal system-type 'gnu/linux))
-              (notifications-notify
-               :title "Emacs Taskrunner"
-               :body display-string
-               :urgency 'low))
-             ((equal system-type 'windows-nt)
-              (w32-notification-notify
-               :title "Emacs Taskrunner"
-               :body display-string
-               :level 'low))
-             )))))
+    (when (or (fboundp 'notifications-notify)
+              (fboundp 'w32-notifications-notify))
+      (let ((buff-name (buffer-name BUFF))
+            (program-name)
+            (task-name)
+            (display-string))
+        ;; Create a notification only when its a taskrunner buffer
+        (when (string-match-p taskrunner--buffer-name-regexp buff-name)
+          (setq program-name (cadr (split-string buff-name "-")))
+          (setq task-name (car (split-string
+                                (caddr (split-string buff-name "-")) "*")))
+          (setq display-string (concat "The command \""  program-name " "
+                                       task-name "\" "
+                                       "has finished!"))
+          ;; Decide the system type
+          (cond
+           ((or (equal system-type 'darwin)
+                (equal system-type 'gnu/linux))
+            ;; Silence the byte compiler on windows
+            (if (fboundp 'notifications-notify)
+                (notifications-notify
+                 :title "Emacs Taskrunner"
+                 :body display-string
+                 :urgency 'low)))
+           ((equal system-type 'windows-nt)
+            ;; Silence the byte compiler on linux/macos platforms
+            (if (fboundp 'w32-notification-notify)
+                (w32-notification-notify
+                 :title "Emacs Taskrunner"
+                 :body display-string
+                 :level 'low))))))))
 
   (defun taskrunner-notification-on ()
     "Turn on notifications which are shown when a task ran with taskrunner is finished.."
