@@ -242,6 +242,23 @@ This function will return a list of strings of the form:
                      (projectile-project-root))))
     (gethash (intern proj-root) taskrunner-custom-command-cache)))
 
+(defun taskrunner-delete-custom-command (ROOT COMMAND)
+  "Delete a custom command COMMAND for the project in directory ROOT."
+  (let ((command-list (gethash (intern ROOT) taskrunner-custom-command-cache)))
+    (when command-list
+      (setq command-list (remove COMMAND command-list))
+      ;; Overwrite the custom commands
+      (puthash (intern ROOT) command-list taskrunner-custom-command-cache))))
+
+(defun taskrunner-delete-all-custom-commands (&optional DIR)
+  "Delete all custom tasks for a project.
+If DIR is non-nil then delete the tasks for the project with root
+DIR.  Otherwise, use the output of `projectile-project-root'."
+  (let ((proj-root (if DIR
+                       DIR
+                     (projectile-project-root))))
+    (puthash (intern proj-root) nil taskrunner-custom-command-cache)))
+
 ;; Invalidation functions for caches. These "reset" them
 (defun taskrunner-invalidate-build-cache ()
   "Invalidate the entire build cache."
@@ -641,6 +658,7 @@ If DIR is non-nil then tasks are gathered from that directory."
        ;; This is to prevent erros occurring when C-g is used from whatever is
        ;; present in FUNC
        (with-local-quit
+         ;; Add custom tasks to output here
          (funcall FUNC proj-tasks))))))
 
 (defun taskrunner-get-tasks-async (FUNC &optional DIR)
@@ -669,12 +687,14 @@ If DIR is non-nil then tasks are gathered from that directory."
   (let* ((proj-root (if DIR
                         DIR
                       (projectile-project-root)))
-         (proj-tasks (taskrunner-get-tasks-from-cache proj-root)))
+         (proj-tasks (taskrunner-get-tasks-from-cache proj-root))
+         (custom-tasks (taskrunner-get-custom-commands proj-root)))
     ;; Attempt to avoid spawning a process. On Linux/MacOS this should not be
     ;; too much of a problem but it can be quite slow on Windows
     (if proj-tasks
         (with-local-quit
-          (funcall FUNC proj-tasks))
+          ;; Add custom tasks here is the tasks do not need to be gathered
+          (funcall FUNC (append custom-tasks proj-tasks)))
       (taskrunner--start-async-task-process FUNC proj-root))))
 
 (defun taskrunner-project-cached-p (&optional DIR)
@@ -737,6 +757,7 @@ from the build cache."
          ;; Concat the arguments since we might be rerunning a command with arguments from history
          (task-name (mapconcat 'identity
                                (cdr (split-string TASK " ")) " "))
+         (command)
          ;; Set the exec path to include all binaries so the taskrunners can be found
          ;; This should not produce a problem if the binaries/folders do not exist
          (exec-path (append exec-path (list taskrunner-go-task-bin-path
