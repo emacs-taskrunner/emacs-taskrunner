@@ -140,6 +140,10 @@ It is a hashmap where each member is of the form (project-root list-of-tasks)")
   "A cache used to store the command history for a project.
 It is a hashmap where each member is of the form (project-root list-of-commands)")
 
+(defvar taskrunner-custom-command-cache (make-hash-table :test 'eq :weakness nil)
+  "A cache used to store custom commands for each project.
+It is a hashmap where each member is of the form (project-root list-of-commands)")
+
 (defvar taskrunner-command-history-size 10
   "The maximum number of commands stored in the command cache for each project.")
 
@@ -218,6 +222,26 @@ command `projectile-project-root'"
                     (projectile-project-root))))
     (gethash (intern proj-dir) taskrunner-command-history-cache)))
 
+(defun taskrunner-add-custom-command (ROOT COMMAND)
+  "Add a custom command COMMAND to the cache for project in ROOT."
+  (let ((comm-list (gethash (intern ROOT) taskrunner-custom-command-cache)))
+    ;; If the list is not empty then simply append the new command
+    (if comm-list
+        (puthash (intern ROOT) (append COMMAND comm-list) taskrunner-custom-command-cache))
+    (puthash (intern ROOT) (list COMMAND) taskrunner-custom-command-cache)))
+
+(defun taskrunner-get-custom-commands (&optional DIR)
+  "Retrieve the list of custom commands for the currently visited project.
+If DIR is non-nil then retrieve commands for project in that root
+folder.  Otherwise, use `projectile-project-root'.
+
+This function will return a list of strings of the form:
+\(\"TASKRUNNER CUSTOM-COMMAND1\" \"TASKRUNNER CUSTOM-COMMAND2\"...)"
+  (let ((proj-root (if DIR
+                       DIR
+                     (projectile-project-root))))
+    (gethash (intern proj-root) taskrunner-custom-command-cache)))
+
 ;; Invalidation functions for caches. These "reset" them
 (defun taskrunner-invalidate-build-cache ()
   "Invalidate the entire build cache."
@@ -234,6 +258,10 @@ command `projectile-project-root'"
 (defun taskrunner-invalidate-command-history-cache ()
   "Invalidate the entire command history cache."
   (clrhash taskrunner-command-history-cache))
+
+(defun taskrunner-invalidate-custom-command-cache ()
+  "Invalidate the entire custom command cache."
+  (clrhash taskrunner-custom-command-cache))
 
 ;; Saving and reading the cache file
 (defun taskrunner-read-cache-file ()
