@@ -227,13 +227,15 @@ command `projectile-project-root'"
   (let ((comm-list (gethash (intern ROOT) taskrunner-custom-command-cache)))
     ;; If the list is not empty then simply append the new command
     (if comm-list
-        (puthash (intern ROOT) (append COMMAND comm-list) taskrunner-custom-command-cache))
-    (puthash (intern ROOT) (list COMMAND) taskrunner-custom-command-cache)))
+        (puthash (intern ROOT) (cons COMMAND comm-list) taskrunner-custom-command-cache)
+      (puthash (intern ROOT) (list COMMAND) taskrunner-custom-command-cache)
+      )
+    ))
 
 (defun taskrunner-get-custom-commands (&optional DIR)
   "Retrieve the list of custom commands for the currently visited project.
 If DIR is non-nil then retrieve commands for project in that root
-folder.  Otherwise, use `projectile-project-root'.
+folder.  Otherwise, use command `projectile-project-root'.
 
 This function will return a list of strings of the form:
 \(\"TASKRUNNER CUSTOM-COMMAND1\" \"TASKRUNNER CUSTOM-COMMAND2\"...)"
@@ -253,7 +255,7 @@ This function will return a list of strings of the form:
 (defun taskrunner-delete-all-custom-commands (&optional DIR)
   "Delete all custom tasks for a project.
 If DIR is non-nil then delete the tasks for the project with root
-DIR.  Otherwise, use the output of `projectile-project-root'."
+DIR.  Otherwise, use the output of command `projectile-project-root'."
   (let ((proj-root (if DIR
                        DIR
                      (projectile-project-root))))
