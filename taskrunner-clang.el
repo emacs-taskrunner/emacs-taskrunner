@@ -53,11 +53,10 @@ CMake for either insource or outsource build and then call emacs-taskrunner agai
 ;;;; Functions
 
 
-(defun taskrunner-get-make-targets (DIR MAKEFILE-NAME HIDDEN)
-  "Find all makefile targets from file called MAKEFILE-NAME located in DIR.
+(defun taskrunner-get-make-targets (MAKEFILE-PATH HIDDEN)
+  "Find all makefile targets from makefile located at MAKEFILE-PATH.
 If HIDDEN is non-nil then include targets which start with _."
-  (let* ((makefile-path (expand-file-name MAKEFILE-NAME DIR))
-         (buff (get-file-buffer makefile-path))
+  (let* ((buff (get-file-buffer MAKEFILE-PATH))
          (curr-line)
          (targets '())
          (target-regexp (if HIDDEN
@@ -67,7 +66,7 @@ If HIDDEN is non-nil then include targets which start with _."
       ;; Check if the current makefile is already opened
       (if buff
           (set-buffer buff)
-        (insert-file-contents makefile-path))
+        (insert-file-contents MAKEFILE-PATH))
       ;; Locate all targets
       (while (search-forward-regexp
               target-regexp nil t)
