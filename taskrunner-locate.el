@@ -44,11 +44,18 @@ RG-GLOB"
     (cond
      ((and (file-executable-p taskrunner-rg-bin-path)
            RG-GLOB)
-      (message "Using RG")
-      ;; It seems like all wildcard searches for ripgrep using --files -g have
-      ;; to surround the regexp with *
-      (split-string (shell-command-to-string
-                     (concat taskrunner--rg-filename-command " *"  FILENAME-REGEXP "* " ROOT )) "\n" t)
+      (let ((rg-matches '()))
+        (message "Using RG")
+        ;; It seems like all wildcard searches for ripgrep using --files -g have
+        ;; to surround the regexp with *
+        (dolist (glob RG-GLOB)
+          (setq rg-matches (append (split-string (shell-command-to-string
+                                                  (concat taskrunner--rg-filename-command " *"  glob "* " ROOT ))
+                                                 "\n" t)
+                                   rg-matches))
+          )
+        rg-matches
+        )
       )
      ((file-executable-p taskrunner-ag-bin-path)
       (message "Using AG")
@@ -116,7 +123,7 @@ updating the cache."
         (tasks '()))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "package\.json$" DIR 'taskrunner-get-package-json-tasks)))
+                        (taskrunner-get-all-tasks "package\.json$" DIR 'taskrunner-get-package-json-tasks "package\.json")))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "[Gg]ulpfile\.js$" DIR 'taskrunner-get-gulp-tasks)))
@@ -132,31 +139,32 @@ updating the cache."
 
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*mix\.exs$\"" DIR 'taskrunner-get-mix-tasks)))
+                        (taskrunner-get-all-tasks "\".*mix\.exs$\"" DIR 'taskrunner-get-mix-tasks "mix\.exs")))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*project\.clj$\"" DIR 'taskrunner-get-leiningen-tasks)))
+                        (taskrunner-get-all-tasks "\".*project\.clj$\"" DIR 'taskrunner-get-leiningen-tasks "project\.clj")))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*Taskfile\.yml$\"" DIR 'taskrunner-get-go-task-tasks)))
+                        (taskrunner-get-all-tasks "\".*Taskfile\.yml$\"" DIR 'taskrunner-get-go-task-tasks "Taskfile\.yml")))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*dodo\.py$\"" DIR 'taskrunner-get-doit-tasks)))
+                        (taskrunner-get-all-tasks "\".*dodo\.py$\"" DIR 'taskrunner-get-doit-tasks "dodo\.py")))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*magefile\.go$\"" DIR 'taskrunner-get-mage-tasks)))
+                        (taskrunner-get-all-tasks "\".*magefile\.go$\"" DIR 'taskrunner-get-mage-tasks "magefile\.go")))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*maskfile\.md$\"" DIR 'taskrunner-get-mask-tasks)))
+                        (taskrunner-get-all-tasks "\".*maskfile\.md$\"" DIR 'taskrunner-get-mask-tasks "maskfile\.md")))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*tusk\.yml$\"" DIR 'taskrunner-get-tusk-tasks)))
+                        (taskrunner-get-all-tasks "\".*tusk\.yml$\"" DIR 'taskrunner-get-tusk-tasks "tusk\.yml")))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*buidler\.config\.js$\"" DIR 'taskrunner-get-buidler-tasks)))
+                        (taskrunner-get-all-tasks "\".*buidler\.config\.js$\"" DIR 'taskrunner-get-buidler-tasks
+                                                  "buidler\.config\.js")))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*dobi\.yml$\"" DIR 'taskrunner-get-dobi-tasks)))
+                        (taskrunner-get-all-tasks "\".*dobi\.yml$\"" DIR 'taskrunner-get-dobi-tasks "dobi\.yml")))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*(Justfile|justfile|JUSTFILE)$\"" DIR 'taskrunner-get-just-tasks)))
@@ -175,7 +183,8 @@ updating the cache."
                         (taskrunner-get-all-tasks-file "\".*(M|m|GNUm)akefile$\"" DIR
                                                        (lambda (FILE)
                                                          (taskrunner-get-make-targets FILE
-                                                                                      taskrunner-retrieve-all-make-targets)))))
+                                                                                      taskrunner-retrieve-all-make-targets))
+                                                       '("[Mm]akefile" "GNUmakefile"))))
 
     ;; These are searched for in project root only
     (if (or (member "gradlew" work-dir-files)
