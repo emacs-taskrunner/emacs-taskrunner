@@ -86,7 +86,7 @@ If HIDDEN is non-nil then include targets which start with _."
         (widen)
         )
       )
-    (taskrunner-add-to-build-cache (projectile-project-root) DIR)
+    ;; (taskrunner-add-to-build-cache (projectile-project-root) DIR)
     (cl-map 'list (lambda (elem)
                     (concat "MAKE" " " elem)) targets)
     )
