@@ -26,7 +26,9 @@ these frontends:
 * Project Status
 Currently, this project is stable. It makes quite a lot of assumptions about
 build/taskrunner configuration files being present at the root only and not
-nested in the file hierarchy of the project.
+nested in the file hierarchy of the project. This means that something like a
+~Makefile~ that is deep within the hierarchy of a project might not be
+discovered. I am working on improving this aspect right now.
 ** Supported Systems
 It can be used for the following systems/frontends listed below.
 *** Currently supported
@@ -62,12 +64,11 @@ It can be used for the following systems/frontends listed below.
 - [X] helm
 - [ ] ido (Work in progress. Coming Soon!)
 ** Planned improvements
-- [ ] Use ripgrep/ag/grep to locate task files. This will help find nested
-  Makefiles and other task files which need to be parsed.
-- [ ] Add Smart/Dumb support. Smart support will use ripgrep/ag/grep and "Dumb"
-  support will work very similarly to the way it is done now. This is if the
-  user does not have any of those installed or they would not like to spawn too
-  many ripgrep/ag/grep processes on their system.
+- [ ] Add shallow/deep support. Deep support will use ripgrep/ag/grep(whichever
+  one is available in that order) and shallow support will work very similarly
+  to the way it is done now. This is if the user does not have any of those
+  installed or they would not like to spawn too many ripgrep/ag/find processes
+  on their system which scan the project root.
 - [ ] Add support for more taskrunners/build systems.
 *** Planning to add support for
 - [ ] Apache maven
