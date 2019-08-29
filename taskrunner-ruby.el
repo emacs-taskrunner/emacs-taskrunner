@@ -20,6 +20,7 @@ This function returns a list of the form:
       (taskrunner--narrow-to-line)
       (push (concat "RAKE" " " (cadr (split-string (buffer-string) " " t))) rake-tasks)
       (widen))
+    (kill-current-buffer)
     rake-tasks))
 
 
