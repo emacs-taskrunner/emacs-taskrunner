@@ -18,6 +18,9 @@
 (defconst taskrunner--ag-filename-command "ag -g "
   "Command line arguments for silver searcher(ag).")
 
+(defconst taskrunner--find-filename-command " -type f -regextype posix-egrep -regex "
+  "Command line arguments used for the find utility.")
+
 (defsubst taskrunner-searchers-installed-p ()
   "Check if search programs are installed."
   (or (file-executable-p taskrunner-rg-bin-path)
@@ -55,26 +58,24 @@ RG-GLOB"
      ((file-executable-p taskrunner-grep-bin-path)
       (message "Using find")
       (split-string (shell-command-to-string
-                     (concat "find " ROOT " -regextype posix-egrep -regex " FILENAME-REGEXP)) "\n" t))
-     (t
-      (message "Finish this as a fallback!"))
+                     (concat "find " ROOT "-type f -regextype posix-egrep -regex " FILENAME-REGEXP)) "\n" t))
      )
     )
   )
 
 
 (defun taskrunner-get-all-tasks-dir (FILENAME-REGEXP ROOT FUNC &optional RG-GLOB)
-  "Find all file names matching FILENAME-REGEXP in project with dir at ROOT.
-Call FUNC for each of the filepaths for each file.
-RG-GLOB"
+  "Find all filenames matching FILENAME-REGEXP in directory ROOT.
+The containing directory of each file which matches FILENAME-REGEXP is passed
+to FUNC.  If RG-GLOB is non-nil, it should be a list of git style globs which
+will be passed to ripgrep."
   (let ((search-result (taskrunner-locate-filename FILENAME-REGEXP ROOT RG-GLOB))
         (tasks-found '()))
     (when search-result
       (dolist (file-path search-result)
         (when (file-exists-p file-path)
-          (message "FILE EXISTS %s" file-path)
+          ;; (message "FILE EXISTS %s" file-path)
           (setq tasks-found (append tasks-found (funcall FUNC (file-name-directory file-path))))
-          ;; (append tasks-found (funcall FUNC (file-name-directory file-path)))
           )
         )
       )
@@ -83,15 +84,16 @@ RG-GLOB"
   )
 
 (defun taskrunner-get-all-tasks-file (FILENAME-REGEXP ROOT FUNC &optional RG-GLOB)
-  "Find all file names matching FILENAME-REGEXP in project with dir at ROOT.
-Call FUNC for each of the filepaths for each file.
-RG-GLOB"
+  "Find all filenames matching FILENAME-REGEXP in directory ROOT.
+Each resulting filepath(absolute) which matches FILENAME-REGEXP
+is passed to FUNC.  If RG-GLOB is non-nil, it should be a list of
+git style globs which will be passed to ripgrep."
   (let ((search-result (taskrunner-locate-filename FILENAME-REGEXP ROOT RG-GLOB))
         (tasks-found '()))
     (when search-result
       (dolist (file-path search-result)
         (when (file-exists-p file-path)
-          (message "FILE EXISTS %s" file-path)
+          ;; (message "FILE EXISTS %s" file-path)
           (setq tasks-found (append tasks-found (funcall FUNC file-path)))
           ;; (append tasks-found (funcall FUNC (file-name-directory file-path)))
           )
@@ -117,55 +119,47 @@ updating the cache."
                         (taskrunner-get-all-tasks "package\.json$" DIR 'taskrunner-get-package-json-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "[Gg]ulpfile\.js$" DIR 'taskrunner-get-package-json-tasks)))
+                        (taskrunner-get-all-tasks "[Gg]ulpfile\.js$" DIR 'taskrunner-get-gulp-tasks)))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*Gruntfile\.(js|coffee)$\"" DIR 'taskrunner-get-grunt-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*Jakefile(\.js|\.coffee)?$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*Jakefile(\.js|\.coffee)?$\"" DIR 'taskrunner-get-jake-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\"[Rr]akefile(\.rb)?$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\"[Rr]akefile(\.rb)?$\"" DIR 'taskrunner-get-rake-tasks)))
 
-
-    (if (member "build.xml" work-dir-files)
-        (setq tasks (append tasks (taskrunner-get-ant-tasks DIR))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*mix\.exs$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*mix\.exs$\"" DIR 'taskrunner-get-mix-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*project\.clj$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*project\.clj$\"" DIR 'taskrunner-get-leiningen-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*Taskfile\.yml$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*Taskfile\.yml$\"" DIR 'taskrunner-get-go-task-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*dodo\.py$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*dodo\.py$\"" DIR 'taskrunner-get-doit-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*magefile\.go$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*magefile\.go$\"" DIR 'taskrunner-get-mage-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*maskfile\.md$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*maskfile\.md$\"" DIR 'taskrunner-get-mask-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*tusk\.yml$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*tusk\.yml$\"" DIR 'taskrunner-get-tusk-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*buidler\.config\.js$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*buidler\.config\.js$\"" DIR 'taskrunner-get-buidler-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*dobi\.yml$\"" DIR 'taskrunner-get-grunt-tasks)))
-
-    ;; (if (or (member "justfile" work-dir-files)
-    ;;         (member "Justfile" work-dir-files)
-    ;;         (member "JUSTFILE" work-dir-files))
-    ;;     (setq tasks (append tasks (taskrunner-get-just-tasks DIR))))
+                        (taskrunner-get-all-tasks "\".*dobi\.yml$\"" DIR 'taskrunner-get-dobi-tasks)))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*\.yml$\"" DIR 'taskrunner-get-grunt-tasks)))
+                        (taskrunner-get-all-tasks "\".*(Justfile|justfile|JUSTFILE)$\"" DIR 'taskrunner-get-just-tasks)))
 
     ;; (cond ((member "CMakeLists.txt" work-dir-files)
     ;;        (setq tasks (append tasks (taskrunner-get-cmake-tasks DIR))))
@@ -177,38 +171,26 @@ updating the cache."
     ;;       ((taskrunner-file-in-source-folder-p DIR work-dir-files "meson.build")
     ;;        (setq tasks (append tasks (taskrunner-get-meson-tasks DIR)))))
 
-    ;; There should only be one makefile in the directory only look for one type
-    ;; of name.
-    ;; (cond
-    ;;  ((member "Makefile" work-dir-files)
-    ;;   (setq tasks (append tasks (taskrunner-get-make-targets
-    ;;                              DIR "Makefile" taskrunner-retrieve-all-make-targets))))
-    ;;  ((member "makefile" work-dir-files)
-    ;;   (setq tasks (append tasks (taskrunner-get-make-targets
-    ;;                              DIR "makefile" taskrunner-retrieve-all-make-targets))))
-    ;;  ((member "GNUmakefile" work-dir-files)
-    ;;   (setq tasks (append tasks (taskrunner-get-make-targets
-    ;;                              DIR "GNUmakefile" taskrunner-retrieve-all-make-targets)))))
-
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks-file "\".*(M|m|GNUm)akefile$\"" DIR
                                                        (lambda (FILE)
                                                          (taskrunner-get-make-targets FILE
                                                                                       taskrunner-retrieve-all-make-targets)))))
 
-    ;; Keep this at the project root. Usually, gradle files are not nested
+    ;; These are searched for in project root only
     (if (or (member "gradlew" work-dir-files)
             (member "gradlew.bat" work-dir-files)
             (member "build.gradle" work-dir-files))
         (setq tasks (append tasks (taskrunner-get-gradle-tasks DIR))))
 
+    (if (member "build.xml" work-dir-files)
+        (setq tasks (append tasks (taskrunner-get-ant-tasks DIR))))
+
     ;; Static targets. These will never change and are hardcoded
-    ;; These should also always be found at the root
     (if (member "Cargo.toml" work-dir-files)
         (setq tasks (append tasks taskrunner--rust-targets)))
 
-    (if (or (member "go.mod" work-dir-files)
-            (member "go.sum" work-dir-files))
+    (if (taskrunner-locate-filename "\".*go\.(mod|sum)$\"" DIR)
         (setq tasks (append tasks taskrunner--golang-targets)))
 
     (if (member "Cask" work-dir-files)
@@ -218,34 +200,11 @@ updating the cache."
         (setq tasks (append tasks taskrunner--stack-targets)))
 
     ;; Cabal can have multiple files but they all end with .cabal extension
-    (if (taskrunner-locate-filename "\.cabal$" DIR)
+    (if (taskrunner-locate-filename "\".*\.cabal$\"" DIR)
         (setq tasks (append taskrunner--cabal-targets)))
 
     ;;; Return the tasks collected
     tasks))
-
-;; (taskrunner-get-all-tasks "[Mm]akefile$" "~/clones/esqulino/" '(lambda (filepath)
-;;                                                                  (taskrunner-get-make-targets filepath "Makefile" t)))
-;; (message "%s"
-;;          (taskrunner-get-all-tasks-file "\".*(M|m|GNUm)akefile$\"" "~/clones/esqulino/"
-;;                                         (lambda (FILE)
-;;                                           (taskrunner-get-make-targets FILE
-;;                                                                        taskrunner-retrieve-all-make-targets))))
-
-;; (message "%s" (taskrunner-get-all-tasks "package\.json$" "~/clones/vscode-node-debug/" 'taskrunner-get-package-json-tasks))
-;; (message "REX %s" (taskrunner-get-all-tasks "Gruntfile\.js$" "~/clones/grunt-demo/" 'taskrunner-get-grunt-tasks))
-
-;; (taskrunner-locate-filename "package\.json$" "~/clones/vscode-node-debug")
-;; (taskrunner-locate-filename "Gruntfile\.js$" "~/clones/vscode-node-debug")
-
-;; (taskrunner-locate-filename "Cargo\.toml" "~/clones/bat")
-;; (message "tASKS %s" (taskrunner-collect-tasks-full-search "~/clones/grunt-demo/"))
-;; (message "%s" (taskrunner-collect-tasks-full-search "~/linux/"))
-
-;; (taskrunner-locate-filename "\".*Gruntfile\.(js|coffee)$\"" "~/clones/regex-test/")
-;; (taskrunner-locate-filename "\".*Jakefile(\.js|\.coffee)?$\"" "~/clones/regex-test/")
-;; (taskrunner-locate-filename "\".*(M|m|GNUm)akefile$\"" "~/clones/regex-test/")
-;; (taskrunner-locate-filename "\".*(M|m|GNUm)akefile$\"" "~/clones/esqulino/")
 
 (provide 'taskrunner-locate)
 ;;; taskrunner-locate.el ends here
