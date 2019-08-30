@@ -948,6 +948,77 @@ This is not meant to be used for anything seen by the user."
         (setq compilation-finish-functions (remove 'taskrunner--show-notification
                                                    compilation-finish-functions)))))
 
+(defun taskrunner-parse-and-run-task (COMMAND &optional ASK DIR USE-BUILD-CACHE)
+  (let ((command-split (split-string COMMAND " " t))
+        (program)
+        (program-args)
+        (folder))
+    (when (file-directory-p (car (last command-split)))
+      (setq folder (car (last command-split)))
+      (setq command-split (butlast command-split))
+      )
+    (setq program (car command-split))
+    (setq program-args (mapconcat 'identity (cdr command-split) " "))
+    (if ASK
+        (setq program-args (read-string "Arguments for command: " program-args))))
+  )
+
+(defun taskrunner-run-task (PROGRAM ARGS &optional DIR USE-BUILD-CACHE)
+  "Run command TASK in project root or directory DIR if provided.
+If ASK is non-nil then ask the user to supply extra arguments to
+the task to be ran.  If USE-BUILD-CACHE is non-nil then attempt
+to use the build directory for the project which is retrieved
+from the build cache."
+  (let* ((default-directory (if DIR
+                                DIR
+                              (projectile-project-root)))
+         (taskrunner-program (downcase (car (split-string TASK " "))))
+         ;; Concat the arguments since we might be rerunning a command with arguments from history
+         (task-name (mapconcat 'identity
+                               (cdr (split-string TASK " ")) " "))
+         (command)
+         ;; Set the exec path to include all binaries so the taskrunners can be found
+         ;; This should not produce a problem if the binaries/folders do not exist
+         (exec-path (append exec-path (list taskrunner-go-task-bin-path
+                                            taskrunner-mage-bin-path
+                                            taskrunner-tusk-bin-path
+                                            taskrunner-doit-bin-path
+                                            taskrunner-dobi-bin-path))))
+
+    ;; Add the commands to history and set the new last command ran The command
+    ;; is concatenated again so any arguments provided(if there are any) are saved
+    (taskrunner-set-last-command-ran (projectile-project-root) default-directory
+                                     (concat (upcase taskrunner-program) " " task-name))
+    (taskrunner-add-command-to-history (projectile-project-root)
+                                       (concat (upcase taskrunner-program) " " task-name))
+
+    ;; Command to be ran is built here.  Some taskrunners/build systems require
+    ;; special handling(cache lookups/prepending/appending some extra command to
+    ;; run the task...) and all of this is done here
+    (cond ((string-equal "ninja" taskrunner-program)
+           (when (and USE-BUILD-CACHE
+                      (taskrunner-get-build-cache default-directory))
+             (setq default-directory (taskrunner-get-build-cache default-directory)))
+           (setq command (concat taskrunner-program " " task-name)))
+          ((string-equal "make" taskrunner-program)
+           (when (and USE-BUILD-CACHE
+                      (taskrunner-get-build-cache default-directory))
+             (setq default-directory (taskrunner-get-build-cache default-directory)))
+           (setq command (concat taskrunner-program " " task-name)))
+          ((string-equal "npm" taskrunner-program)
+           (setq command (concat taskrunner-program " " "run" " " task-name)))
+          ((string-equal "yarn" taskrunner-program)
+           (setq command (concat taskrunner-program " " "run" " " task-name)))
+          ((string-equal "buidler" taskrunner-program)
+           (setq command (concat "npx" " " taskrunner-program " " task-name)))
+          ((string-equal "dobi" taskrunner-program)
+           (setq command (concat taskrunner-dobi-bin-name " " task-name)))
+          (t
+           (setq command (concat taskrunner-program " " task-name))))
+
+    (taskrunner-write-cache-file)
+    (compilation-start command t (taskrunner--generate-compilation-buffer-name taskrunner-program task-name) t)))
+
 ;;;; Footer
 
 (provide 'taskrunner)
