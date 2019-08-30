@@ -33,9 +33,6 @@ variable is nil then `npm' is used as default."
 (defconst taskrunner--js-gulp-tasks-command "gulp --tasks-simple"
   "Command used to retrieve the tasks for Gulp.")
 
-(defconst taskrunner--jake-tasks-command "jake -T"
-  "Command used to retrieve tasks from the Jake taskrunner.")
-
 ;;;; Functions
 
 (defun taskrunner--yarn-or-npm (DIR)
@@ -61,7 +58,7 @@ is present then NPM is used.  If none are present and
   "Retrieve all tasks in the scripts section of the package.json file in DIR.
 This function returns a list of the form:
 \(\PM TASK1\" \"PM TASK2\"...)
-where PM is the package manager used."
+where PM is the package manager used(yarn or npm)."
   (let* ((package-path (expand-file-name "package.json" DIR))
          (package-json-scripts (alist-get 'scripts (json-read-file package-path)))
          (task-prefix (taskrunner--yarn-or-npm DIR))
