@@ -35,7 +35,7 @@ which to find the relative path.  Otherwise, use the command
   (let ((proj-root (if DIR
                        DIR
                      (projectile-project-root))))
-    (file-relative-name PATH proj-root)))
+    (file-name-directory (file-relative-name PATH proj-root))))
 
 (defsubst taskrunner-find-absolute-path (PATH &optional DIR)
   "Return the absolute path for PATH.
@@ -89,8 +89,12 @@ will be passed to ripgrep."
     (when search-result
       (dolist (file-path search-result)
         (when (file-exists-p file-path)
-          ;; (message "FILE EXISTS %s" file-path)
-          (setq tasks-found (append tasks-found (funcall FUNC (file-name-directory file-path))))
+          ;; Find the relative path
+          (setq rel-path (taskrunner-find-relative-path file-path ROOT))
+          (setq tasks-found (append tasks-found (cl-map 'list (lambda (task)
+                                                                (concat task "\t" rel-path))
+                                                        (funcall FUNC
+                                                                 (file-name-directory file-path)))))
           )
         )
       )
@@ -104,13 +108,15 @@ Each resulting filepath(absolute) which matches FILENAME-REGEXP
 is passed to FUNC.  If RG-GLOB is non-nil, it should be a list of
 git style globs which will be passed to ripgrep."
   (let ((search-result (taskrunner-locate-filename FILENAME-REGEXP ROOT RG-GLOB))
+        (rel-path)
         (tasks-found '()))
     (when search-result
       (dolist (file-path search-result)
         (when (file-exists-p file-path)
-          ;; (message "FILE EXISTS %s" file-path)
-          (setq tasks-found (append tasks-found (funcall FUNC file-path)))
-          ;; (append tasks-found (funcall FUNC (file-name-directory file-path)))
+          (setq rel-path (taskrunner-find-relative-path file-path ROOT))
+          (setq tasks-found (append tasks-found (cl-map 'list (lambda (task)
+                                                                (concat task "\t" rel-path))
+                                                        (funcall FUNC file-path))))
           )
         )
       )
@@ -158,47 +164,47 @@ updating the cache."
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*mix\.exs$\"" DIR
                                                   'taskrunner-get-mix-tasks
-                                                  "mix\.exs")))
+                                                  '("mix\.exs"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*project\.clj$\"" DIR
                                                   'taskrunner-get-leiningen-tasks
-                                                  "project\.clj")))
+                                                  '("project\.clj"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*Taskfile\.yml$\"" DIR
                                                   'taskrunner-get-go-task-tasks
-                                                  "Taskfile\.yml")))
+                                                  '("Taskfile\.yml"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*dodo\.py$\"" DIR
                                                   'taskrunner-get-doit-tasks
-                                                  "dodo\.py")))
+                                                  '("dodo\.py"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*magefile\.go$\"" DIR
                                                   'taskrunner-get-mage-tasks
-                                                  "magefile\.go")))
+                                                  '("magefile\.go"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*maskfile\.md$\"" DIR
                                                   'taskrunner-get-mask-tasks
-                                                  "maskfile\.md")))
+                                                  '("maskfile\.md"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*tusk\.yml$\"" DIR
                                                   'taskrunner-get-tusk-tasks
-                                                  "tusk\.yml")))
+                                                  '("tusk\.yml"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*buidler\.config\.js$\"" DIR
                                                   'taskrunner-get-buidler-tasks
-                                                  "buidler\.config\.js")))
+                                                  '("buidler\.config\.js"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*dobi\.yml$\"" DIR
                                                   'taskrunner-get-dobi-tasks
-                                                  "dobi\.yml")))
+                                                  '("dobi\.yml"))))
 
     (setq tasks (append tasks
                         (taskrunner-get-all-tasks "\".*(Justfile|justfile|JUSTFILE)$\"" DIR
