@@ -46,12 +46,12 @@ is present then NPM is used.  If none are present and
 `taskrunner-preferred-js-package-manager' is nil then the default is `npm'."
   (let ((dir-files  (directory-files DIR)))
     (cond
-     ((stringp taskrunner-preferred-js-package-manager)
-      (upcase taskrunner-preferred-js-package-manager))
      ((member "yarn.lock" dir-files)
       "YARN")
      ((member "package-lock.json" dir-files)
       "NPM")
+     ((stringp taskrunner-preferred-js-package-manager)
+      (upcase taskrunner-preferred-js-package-manager))
      ;; Default if no files are present and the preferred package manager is
      ;; not set
      (t
@@ -108,16 +108,6 @@ This function returns a list of the form:
       (kill-current-buffer))
     (butlast tasks)))
 
-;; (defun taskrunner-get-jake-tasks (DIR)
-;;   "Retrieve the jake tasks for the project in directory DIR.
-;; This function returns a list of the form:
-;; \(\"JAKE TASK1\" \"JAKE TASK2\"...)"
-;;   (let ((default-directory DIR))
-;;     (cl-map 'list (lambda (elem)
-;;                     (concat "JAKE" " " (cadr (split-string elem " "))))
-;;             ;; Splitting the Jake tasks on \n leads to one element being empty so it must be removed
-;;             (remove "" (split-string (shell-command-to-string taskrunner--jake-tasks-command) "\n")))))
-
 (defun taskrunner--get-jake-tasks-from-buffer ()
   "Retrieve the rake tasks from the current buffer.
 This function returns a list of the form:
@@ -135,8 +125,7 @@ This function returns a list of the form:
             (widen))
           (kill-current-buffer)
           jake-tasks))
-    nil)
-  )
+    nil))
 
 (defun taskrunner-get-jake-tasks (DIR)
   "Retrieve the ant tasks for the project in directory DIR.
