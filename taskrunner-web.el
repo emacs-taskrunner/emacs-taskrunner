@@ -108,15 +108,45 @@ This function returns a list of the form:
       (kill-current-buffer))
     (butlast tasks)))
 
+;; (defun taskrunner-get-jake-tasks (DIR)
+;;   "Retrieve the jake tasks for the project in directory DIR.
+;; This function returns a list of the form:
+;; \(\"JAKE TASK1\" \"JAKE TASK2\"...)"
+;;   (let ((default-directory DIR))
+;;     (cl-map 'list (lambda (elem)
+;;                     (concat "JAKE" " " (cadr (split-string elem " "))))
+;;             ;; Splitting the Jake tasks on \n leads to one element being empty so it must be removed
+;;             (remove "" (split-string (shell-command-to-string taskrunner--jake-tasks-command) "\n")))))
+
+(defun taskrunner--get-jake-tasks-from-buffer ()
+  "Retrieve the rake tasks from the current buffer.
+This function returns a list of the form:
+\(\"JAKE TASK1\" \"JAKE TASK2\"...)"
+  (goto-char (point-min))
+  (taskrunner--narrow-to-line)
+  (if (not (string-match-p ".+aborted\." (buffer-string)))
+      (progn
+        (widen)
+        (goto-char (point-min))
+        (let ((jake-tasks '()))
+          (while (search-forward-regexp "^jake[[:space:]]+" nil t)
+            (taskrunner--narrow-to-line)
+            (push (concat "JAKE" " " (cadr (split-string (buffer-string) " " t))) jake-tasks)
+            (widen))
+          (kill-current-buffer)
+          jake-tasks))
+    nil)
+  )
+
 (defun taskrunner-get-jake-tasks (DIR)
-  "Retrieve the jake tasks for the project in directory DIR.
+  "Retrieve the ant tasks for the project in directory DIR.
 This function returns a list of the form:
 \(\"JAKE TASK1\" \"JAKE TASK2\"...)"
   (let ((default-directory DIR))
-    (cl-map 'list (lambda (elem)
-                    (concat "JAKE" " " (cadr (split-string elem " "))))
-            ;; Splitting the Jake tasks on \n leads to one element being empty so it must be removed
-            (remove "" (split-string (shell-command-to-string taskrunner--jake-tasks-command) "\n")))))
+    (call-process "jake"  nil (taskrunner--make-task-buff-name "jake")  nil "-T")
+    (with-temp-buffer
+      (set-buffer (taskrunner--make-task-buff-name "jake"))
+      (taskrunner--get-jake-tasks-from-buffer))))
 
 (provide 'taskrunner-web)
 ;;; taskrunner-web.el ends here
