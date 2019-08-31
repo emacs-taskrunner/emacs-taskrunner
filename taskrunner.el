@@ -966,13 +966,9 @@ This is not meant to be used for anything seen by the user."
     ;; Find out the build/taskrunner name(MAKE, RAKE, LEIN...)
     ;; This will always be the first part of the command passed to this function
     (setq program (car command-split))
-    ;; (setq folder (file-name-as-directory
-    ;;               (expand-file-name
-    ;;                (car (last command-split)) (projectile-project-root))))
-
     (setq folder
           (expand-file-name
-           (string-trim (car (last command-split))) (projectile-project-root)))
+           (string-trim-left (car (last command-split))) (projectile-project-root)))
 
     (message "FOLDER from parsing: %s AND rel. name %s" folder (car (last command-split)))
     (message "EXPANDED FILE NAME %s" (expand-file-name
