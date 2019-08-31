@@ -32,10 +32,12 @@
 If DIR is non-nil then use that as the absolute path name for
 which to find the relative path.  Otherwise, use the command
 `projectile-project-root'."
-  (let ((proj-root (if DIR
-                       DIR
-                     (projectile-project-root))))
-    (file-name-directory (file-relative-name PATH proj-root))))
+  (let* ((proj-root (if DIR
+                        DIR
+                      (projectile-project-root)))
+         (rel-path (file-name-directory (file-relative-name PATH proj-root))))
+    rel-path
+    ))
 
 (defsubst taskrunner-find-absolute-path (PATH &optional DIR)
   "Return the absolute path for PATH.
@@ -85,14 +87,15 @@ The containing directory of each file which matches FILENAME-REGEXP is passed
 to FUNC.  If RG-GLOB is non-nil, it should be a list of git style globs which
 will be passed to ripgrep."
   (let ((search-result (taskrunner-locate-filename FILENAME-REGEXP ROOT RG-GLOB))
-        (tasks-found '()))
+        (tasks-found '())
+        (rel-path-dir ))
     (when search-result
       (dolist (file-path search-result)
         (when (file-exists-p file-path)
           ;; Find the relative path
-          (setq rel-path (taskrunner-find-relative-path file-path ROOT))
+          (setq rel-path-dir (taskrunner-find-relative-path file-path ROOT))
           (setq tasks-found (append tasks-found (cl-map 'list (lambda (task)
-                                                                (concat task "\t" rel-path))
+                                                                (concat task "\t" rel-path-dir))
                                                         (funcall FUNC
                                                                  (file-name-directory file-path)))))
           )
@@ -108,14 +111,14 @@ Each resulting filepath(absolute) which matches FILENAME-REGEXP
 is passed to FUNC.  If RG-GLOB is non-nil, it should be a list of
 git style globs which will be passed to ripgrep."
   (let ((search-result (taskrunner-locate-filename FILENAME-REGEXP ROOT RG-GLOB))
-        (rel-path)
+        (rel-path-file)
         (tasks-found '()))
     (when search-result
       (dolist (file-path search-result)
         (when (file-exists-p file-path)
-          (setq rel-path (taskrunner-find-relative-path file-path ROOT))
+          (setq rel-path-file (taskrunner-find-relative-path (file-name-directory file-path) ROOT))
           (setq tasks-found (append tasks-found (cl-map 'list (lambda (task)
-                                                                (concat task "\t" rel-path))
+                                                                (concat task "\t" rel-path-file))
                                                         (funcall FUNC file-path))))
           )
         )
@@ -137,79 +140,79 @@ updating the cache."
         (tasks '()))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "package\.json$" DIR
-                                                  'taskrunner-get-package-json-tasks
-                                                  '("package\.json"))))
+                        (taskrunner-get-all-tasks-dir "package\.json$" DIR
+                                                      'taskrunner-get-package-json-tasks
+                                                      '("package\.json"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "[Gg]ulpfile\.js$" DIR
-                                                  'taskrunner-get-gulp-tasks
-                                                  '("[Gg]ulpfile\.js"))))
+                        (taskrunner-get-all-tasks-dir "[Gg]ulpfile\.js$" DIR
+                                                      'taskrunner-get-gulp-tasks
+                                                      '("[Gg]ulpfile\.js"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*Gruntfile\.(js|coffee)$\"" DIR
-                                                  'taskrunner-get-grunt-tasks
-                                                  '("Gruntfile\.*"))))
+                        (taskrunner-get-all-tasks-dir "\".*Gruntfile\.(js|coffee)$\"" DIR
+                                                      'taskrunner-get-grunt-tasks
+                                                      '("Gruntfile\.*"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*Jakefile(\.js|\.coffee)?$\"" DIR
-                                                  'taskrunner-get-jake-tasks '("Jakefile\.*"))))
+                        (taskrunner-get-all-tasks-dir "\".*Jakefile(\.js|\.coffee)?$\"" DIR
+                                                      'taskrunner-get-jake-tasks '("Jakefile\.*"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\"[Rr]akefile(\.rb)?$\"" DIR
-                                                  'taskrunner-get-rake-tasks
-                                                  '("[Rr]akefile" "[Rr]akefile\.rb"))))
+                        (taskrunner-get-all-tasks-dir "\"[Rr]akefile(\.rb)?$\"" DIR
+                                                      'taskrunner-get-rake-tasks
+                                                      '("[Rr]akefile" "[Rr]akefile\.rb"))))
 
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*mix\.exs$\"" DIR
-                                                  'taskrunner-get-mix-tasks
-                                                  '("mix\.exs"))))
+                        (taskrunner-get-all-tasks-dir "\".*mix\.exs$\"" DIR
+                                                      'taskrunner-get-mix-tasks
+                                                      '("mix\.exs"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*project\.clj$\"" DIR
-                                                  'taskrunner-get-leiningen-tasks
-                                                  '("project\.clj"))))
+                        (taskrunner-get-all-tasks-dir "\".*project\.clj$\"" DIR
+                                                      'taskrunner-get-leiningen-tasks
+                                                      '("project\.clj"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*Taskfile\.yml$\"" DIR
-                                                  'taskrunner-get-go-task-tasks
-                                                  '("Taskfile\.yml"))))
+                        (taskrunner-get-all-tasks-dir "\".*Taskfile\.yml$\"" DIR
+                                                      'taskrunner-get-go-task-tasks
+                                                      '("Taskfile\.yml"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*dodo\.py$\"" DIR
-                                                  'taskrunner-get-doit-tasks
-                                                  '("dodo\.py"))))
+                        (taskrunner-get-all-tasks-dir "\".*dodo\.py$\"" DIR
+                                                      'taskrunner-get-doit-tasks
+                                                      '("dodo\.py"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*magefile\.go$\"" DIR
-                                                  'taskrunner-get-mage-tasks
-                                                  '("magefile\.go"))))
+                        (taskrunner-get-all-tasks-dir "\".*magefile\.go$\"" DIR
+                                                      'taskrunner-get-mage-tasks
+                                                      '("magefile\.go"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*maskfile\.md$\"" DIR
-                                                  'taskrunner-get-mask-tasks
-                                                  '("maskfile\.md"))))
+                        (taskrunner-get-all-tasks-dir "\".*maskfile\.md$\"" DIR
+                                                      'taskrunner-get-mask-tasks
+                                                      '("maskfile\.md"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*tusk\.yml$\"" DIR
-                                                  'taskrunner-get-tusk-tasks
-                                                  '("tusk\.yml"))))
+                        (taskrunner-get-all-tasks-dir "\".*tusk\.yml$\"" DIR
+                                                      'taskrunner-get-tusk-tasks
+                                                      '("tusk\.yml"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*buidler\.config\.js$\"" DIR
-                                                  'taskrunner-get-buidler-tasks
-                                                  '("buidler\.config\.js"))))
+                        (taskrunner-get-all-tasks-dir "\".*buidler\.config\.js$\"" DIR
+                                                      'taskrunner-get-buidler-tasks
+                                                      '("buidler\.config\.js"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*dobi\.yml$\"" DIR
-                                                  'taskrunner-get-dobi-tasks
-                                                  '("dobi\.yml"))))
+                        (taskrunner-get-all-tasks-dir "\".*dobi\.yml$\"" DIR
+                                                      'taskrunner-get-dobi-tasks
+                                                      '("dobi\.yml"))))
 
     (setq tasks (append tasks
-                        (taskrunner-get-all-tasks "\".*(Justfile|justfile|JUSTFILE)$\"" DIR
-                                                  'taskrunner-get-just-tasks
-                                                  '("Justfile" "justfile" "JUSTFILE"))))
+                        (taskrunner-get-all-tasks-dir "\".*(Justfile|justfile|JUSTFILE)$\"" DIR
+                                                      'taskrunner-get-just-tasks
+                                                      '("Justfile" "justfile" "JUSTFILE"))))
 
     ;; (cond ((member "meson.build" work-dir-files)
     ;;        (setq tasks (append tasks (taskrunner-get-meson-tasks DIR))))
