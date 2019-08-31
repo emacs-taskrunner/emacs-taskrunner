@@ -958,7 +958,7 @@ This is not meant to be used for anything seen by the user."
 
 (defun taskrunner-parse-and-run-task (COMMAND &optional ASK DIR USE-BUILD-CACHE)
   "Parse and run the tasks."
-  (let ((command-split (split-string COMMAND " " t))
+  (let ((command-split (split-string COMMAND))
         (program)
         (program-args)
         (folder)
@@ -966,9 +966,17 @@ This is not meant to be used for anything seen by the user."
     ;; Find out the build/taskrunner name(MAKE, RAKE, LEIN...)
     ;; This will always be the first part of the command passed to this function
     (setq program (car command-split))
-    (setq folder (file-name-as-directory
-                  (expand-file-name
-                   (car (last command-split)) (projectile-project-root))))
+    ;; (setq folder (file-name-as-directory
+    ;;               (expand-file-name
+    ;;                (car (last command-split)) (projectile-project-root))))
+
+    (setq folder
+          (expand-file-name
+           (string-trim (car (last command-split))) (projectile-project-root)))
+
+    (message "FOLDER from parsing: %s AND rel. name %s" folder (car (last command-split)))
+    (message "EXPANDED FILE NAME %s" (expand-file-name
+                                      (string-trim-left (car (last command-split))) (projectile-project-root)))
     ;; ;; Add the commands to history and set the new last command ran The command
     ;; ;; is concatenated again so any arguments provided(if there are any) are saved
     ;; (taskrunner-set-last-command-ran (projectile-project-root) default-directory
@@ -978,26 +986,29 @@ This is not meant to be used for anything seen by the user."
     (cond
      ;; Custom commands
      ((member COMMAND custom-commands)
+      (message "CUSTOM COMMAND")
       (setq program-args (mapconcat 'identity (cdr command-split) " "))
       (when ASK
         (setq program-args (read-string "Arguments to add: " program-args)))
       (taskrunner--command-dispatch program program-args DIR))
      ;; "Deep" commands.
      ((file-accessible-directory-p folder)
+      (message "DEEP COMMAND")
       (setq program-args
             (mapconcat 'identity (butlast (cdr command-split)) " "))
       (when ASK
         (setq program-args (read-string "Arguments to add: " program-args)))
       (taskrunner--command-dispatch program program-args (if DIR
                                                              DIR
-                                                           folder) nil)
+                                                           folder))
       )
      ;; "Shallow" commands
      (t
+      (message "SHALLOw COMMAND")
       (setq program-args (mapconcat 'identity (cdr command-split) " "))
       (when ASK
         (setq program-args (read-string "Arguments to add: " program-args)))
-      (taskrunner--command-dispatch program program-args DIR t))
+      (taskrunner--command-dispatch program program-args DIR))
      )
     )
   )
@@ -1018,7 +1029,7 @@ from the build cache."
                                             taskrunner-doit-bin-path
                                             taskrunner-dobi-bin-path))))
     ;; Debug
-    (message "Program: %s Args: %s DIR: %s Cache: %s" PROGRAM ARGS DIR USE-BUILD-CACHE)
+    (message "Program: %s Args: %s DIR: %s" PROGRAM ARGS DIR)
     ;; Special handling for some taskrunners. Sometimes, extra handling is
     ;; needed such as appending/prepending a certain command.
     (cond
@@ -1027,11 +1038,13 @@ from the build cache."
       (if DIR
           (setq default-directory DIR)
         (setq default-directory (taskrunner-get-build-cache (projectile-project-root))))
+      (setq command (concat (downcase PROGRAM) " " ARGS))
       )
      ((string-equal "NINJA" PROGRAM)
       (if DIR
           (setq default-directory DIR)
         (setq default-directory (taskrunner-get-build-cache (projectile-project-root))))
+      (setq command (concat (downcase PROGRAM) " " ARGS))
       )
      ((string-equal "NPM" PROGRAM)
       (setq command (concat (downcase PROGRAM) " " "run" " " ARGS)))
@@ -1042,11 +1055,12 @@ from the build cache."
      ((string-equal "DOBI" PROGRAM)
       (setq command (concat taskrunner-dobi-bin-name " " ARGS)))
      (t
-      (setq command (concat (downcase PROGRAM) " " ARGS))))
+      (setq command (concat (downcase PROGRAM) " " ARGS))
+      ))
 
     ;; (taskrunner-write-cache-file)
-    (compilation-start command t (taskrunner--generate-compilation-buffer-name PROGRAM ARGS) t)
-
+    (message "Command to run from dispatch: %s" command)
+    ;; (compilation-start command t (taskrunner--generate-compilation-buffer-name PROGRAM ARGS) t)
     )
   )
 
