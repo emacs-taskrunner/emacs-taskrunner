@@ -1,7 +1,6 @@
 ;;; package --- Summary
 ;;; Commentary:
 ;;; Code:
-(require 'taskrunner)
 
 (defcustom taskrunner-rg-bin-path (executable-find "rg")
   "Path to ripgrep(rg) binary.")
@@ -128,7 +127,7 @@ git style globs which will be passed to ripgrep."
   )
 
 
-(defun taskrunner-collect-tasks-full-search (DIR)
+(defun taskrunner-collect-tasks-deep (DIR)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
 'TASK-RUNNER-PROGRAM TASK-NAME'.  This is done for the purpose of working with
