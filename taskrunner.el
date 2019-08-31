@@ -92,6 +92,7 @@
 (require 'taskrunner-mix)
 (require 'taskrunner-leiningen)
 (require 'taskrunner-general)
+(require 'taskrunner-locate)
 
 (defgroup taskrunner nil
   "A taskrunner for emacs which covers several build systems and lets the user select and run targets interactively."
@@ -103,6 +104,11 @@
 (defcustom taskrunner-no-previous-command-ran-warning
   "No previous command has been ran in this project!"
   "Warning used to indicate that there is no cached previously run command."
+  :group 'taskrunner
+  :type 'string)
+
+(defcustom taskrunner-use-deep-search nil
+  "Whether or not deep search should be used to locate targets/tasks in projects."
   :group 'taskrunner
   :type 'string)
 
@@ -487,7 +493,7 @@ to a single file."
 
     files))
 
-(defun taskrunner-collect-tasks (DIR)
+(defun taskrunner-collect-tasks-shallow (DIR)
   "Locate and extract all tasks for the project in directory DIR.
 Returns a list containing all possible tasks.  Each element is of the form
 'TASK-RUNNER-PROGRAM TASK-NAME'.  This is done for the purpose of working with
@@ -662,7 +668,9 @@ If DIR is non-nil then tasks are gathered from that directory."
       (let* ((proj-root (if taskrunner--async-process-dir
                             taskrunner--async-process-dir
                           (projectile-project-root)))
-             (proj-tasks (taskrunner-collect-tasks proj-root)))
+             (proj-tasks (if taskrunner-use-deep-search
+                             (taskrunner-collect-tasks-deep proj-root)
+                           (taskrunner-collect-tasks-shallow proj-root))))
         (list proj-root proj-tasks taskrunner-build-cache)))
    (lambda (TARGETS)
      (let* ((proj-dir (nth 0 TARGETS))
@@ -949,6 +957,7 @@ This is not meant to be used for anything seen by the user."
                                                    compilation-finish-functions)))))
 
 (defun taskrunner-parse-and-run-task (COMMAND &optional ASK DIR USE-BUILD-CACHE)
+  "Parse and run the tasks."
   (let ((command-split (split-string COMMAND " " t))
         (program)
         (program-args)
@@ -960,13 +969,19 @@ This is not meant to be used for anything seen by the user."
     (setq folder (file-name-as-directory
                   (expand-file-name
                    (car (last command-split)) (projectile-project-root))))
+    ;; ;; Add the commands to history and set the new last command ran The command
+    ;; ;; is concatenated again so any arguments provided(if there are any) are saved
+    ;; (taskrunner-set-last-command-ran (projectile-project-root) default-directory
+    ;;                                  (concat (upcase taskrunner-program) " " task-name))
+    ;; (taskrunner-add-command-to-history (projectile-project-root)
+    ;;                                    (concat (upcase taskrunner-program) " " task-name))
     (cond
      ;; Custom commands
      ((member COMMAND custom-commands)
       (setq program-args (mapconcat 'identity (cdr command-split) " "))
       (when ASK
         (setq program-args (read-string "Arguments to add: " program-args)))
-      (taskrunner--command-dispatch program program-args DIR USE-BUILD-CACHE))
+      (taskrunner--command-dispatch program program-args DIR))
      ;; "Deep" commands.
      ((file-accessible-directory-p folder)
       (setq program-args
@@ -982,28 +997,19 @@ This is not meant to be used for anything seen by the user."
       (setq program-args (mapconcat 'identity (cdr command-split) " "))
       (when ASK
         (setq program-args (read-string "Arguments to add: " program-args)))
-      (taskrunner--command-dispatch program program-args DIR USE-BUILD-CACHE)
-      )
+      (taskrunner--command-dispatch program program-args DIR t))
      )
-    ;; ;; Add the commands to history and set the new last command ran The command
-    ;; ;; is concatenated again so any arguments provided(if there are any) are saved
-    ;; (taskrunner-set-last-command-ran (projectile-project-root) default-directory
-    ;;                                  (concat (upcase taskrunner-program) " " task-name))
-    ;; (taskrunner-add-command-to-history (projectile-project-root)
-    ;;                                    (concat (upcase taskrunner-program) " " task-name))
     )
   )
 
-(defun taskrunner--command-dispatch (PROGRAM ARGS &optional DIR USE-BUILD-CACHE)
+(defun taskrunner--command-dispatch (PROGRAM ARGS &optional DIR)
   "Run command TASK in project root or directory DIR if provided.
 If ASK is non-nil then ask the user to supply extra arguments to
 the task to be ran.  If USE-BUILD-CACHE is non-nil then attempt
 to use the build directory for the project which is retrieved
 from the build cache."
-  (let* ((default-directory (if DIR
-                                DIR
-                              (projectile-project-root)))
-         (command)
+  (let* ((default-directory)
+         (command)  ;; The full command to be executed
          ;; Set the exec path to include all binaries so the taskrunners can be found
          ;; This should not produce a problem if the binaries/folders do not exist
          (exec-path (append exec-path (list taskrunner-go-task-bin-path
@@ -1011,9 +1017,22 @@ from the build cache."
                                             taskrunner-tusk-bin-path
                                             taskrunner-doit-bin-path
                                             taskrunner-dobi-bin-path))))
-
-    (message "Prgoram: %s Args: %s DIR: %s Cache: %s" PROGRAM ARGS DIR USE-BUILD-CACHE)
+    ;; Debug
+    (message "Program: %s Args: %s DIR: %s Cache: %s" PROGRAM ARGS DIR USE-BUILD-CACHE)
+    ;; Special handling for some taskrunners. Sometimes, extra handling is
+    ;; needed such as appending/prepending a certain command.
     (cond
+     ((string-equal "MAKE" PROGRAM)
+      ;; If a directory is provided then that has priority otherwise use the build cache
+      (if DIR
+          (setq default-directory DIR)
+        (setq default-directory (taskrunner-get-build-cache (projectile-project-root))))
+      )
+     ((string-equal "NINJA" PROGRAM)
+      (if DIR
+          (setq default-directory DIR)
+        (setq default-directory (taskrunner-get-build-cache (projectile-project-root))))
+      )
      ((string-equal "NPM" PROGRAM)
       (setq command (concat (downcase PROGRAM) " " "run" " " ARGS)))
      ((string-equal "YARN" PROGRAM)
@@ -1023,35 +1042,10 @@ from the build cache."
      ((string-equal "DOBI" PROGRAM)
       (setq command (concat taskrunner-dobi-bin-name " " ARGS)))
      (t
-      (setq command (concat (downcase PROGRAM) " " ARGS)))
-     )
-
-    ;; ;; Command to be ran is built here.  Some taskrunners/build systems require
-    ;; ;; special handling(cache lookups/prepending/appending some extra command to
-    ;; ;; run the task...) and all of this is done here
-    ;; (cond ((string-equal "ninja" taskrunner-program)
-    ;;        (when (and USE-BUILD-CACHE
-    ;;                   (taskrunner-get-build-cache default-directory))
-    ;;          (setq default-directory (taskrunner-get-build-cache default-directory)))
-    ;;        (setq command (concat taskrunner-program " " task-name)))
-    ;;       ((string-equal "make" taskrunner-program)
-    ;;        (when (and USE-BUILD-CACHE
-    ;;                   (taskrunner-get-build-cache default-directory))
-    ;;          (setq default-directory (taskrunner-get-build-cache default-directory)))
-    ;;        (setq command (concat taskrunner-program " " task-name)))
-    ;;       ((string-equal "npm" taskrunner-program)
-    ;;        (setq command (concat taskrunner-program " " "run" " " task-name)))
-    ;;       ((string-equal "yarn" taskrunner-program)
-    ;;        (setq command (concat taskrunner-program " " "run" " " task-name)))
-    ;;       ((string-equal "buidler" taskrunner-program)
-    ;;        (setq command (concat "npx" " " taskrunner-program " " task-name)))
-    ;;       ((string-equal "dobi" taskrunner-program)
-    ;;        (setq command (concat taskrunner-dobi-bin-name " " task-name)))
-    ;;       (t
-    ;;        (setq command (concat taskrunner-program " " task-name))))
+      (setq command (concat (downcase PROGRAM) " " ARGS))))
 
     ;; (taskrunner-write-cache-file)
-    ;; (compilation-start command t (taskrunner--generate-compilation-buffer-name taskrunner-program task-name) t)
+    (compilation-start command t (taskrunner--generate-compilation-buffer-name PROGRAM ARGS) t)
 
     )
   )
