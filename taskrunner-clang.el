@@ -52,6 +52,12 @@ CMake for either insource or outsource build and then call emacs-taskrunner agai
 
 ;;;; Functions
 
+;; These are here just to silence the bytecompiler. They are defined in
+;; `taskrunner.el' and will be loaded later on but due to these files being
+;; required before the function being loaded, a warning is emitted.
+(declare-function taskrunner--narrow-to-line "ext:taskrunner")
+(declare-function taskrunner--make-task-buff-name "ext:taskrunner")
+(declare-function taskrunner-add-to-build-cache "ext:taskrunner")
 
 (defun taskrunner-get-make-targets (DIR MAKEFILE-NAME HIDDEN)
   "Find all makefile targets from file called MAKEFILE-NAME located in DIR.

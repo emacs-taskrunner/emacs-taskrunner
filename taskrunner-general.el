@@ -50,6 +50,13 @@
   :type 'string)
 
 ;;;; Functions
+
+;; These are here just to silence the bytecompiler. They are defined in
+;; `taskrunner.el' and will be loaded later on but due to these files being
+;; required before the function being loaded, a warning is emitted.
+(declare-function taskrunner--narrow-to-line "ext:taskrunner")
+(declare-function taskrunner--make-task-buff-name "ext:taskrunner")
+
 (defun taskrunner--get-go-tasks-from-buffer ()
   "Retrieve all go tasks from the currently visited buffer.
 The tasks are returned in the form:
@@ -298,7 +305,7 @@ This function assumes that you have `npx' installed."
 This function returns a list of the form:
 \(\"DOBI TASK1\" \"DOBI TASK2\"...)"
   (let ((default-directory DIR)
-        (exec-path (cons taskrunner-dobi-bin-path2 exec-path)))
+        (exec-path (cons taskrunner-dobi-bin-path exec-path)))
     (call-process taskrunner-dobi-bin-name nil (taskrunner--make-task-buff-name "dobi") nil "list")
     (with-temp-buffer
       (set-buffer (taskrunner--make-task-buff-name "dobi"))

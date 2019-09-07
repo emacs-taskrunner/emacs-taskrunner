@@ -75,7 +75,7 @@
 ;; GNU General Public License for more details.
 
 ;; You should have received a copy of the GNU General Public License
-;; along with this program.  If not, see <http://www.gnu.org/licenses/>.
+;; along with this program.  If not, see <https://www.gnu.org/licenses/>.
 
 ;;; Code:
 
@@ -776,7 +776,7 @@ from the build cache."
                               (projectile-project-root)))
          (taskrunner-program (downcase (car (split-string TASK " "))))
          ;; Concat the arguments since we might be rerunning a command with arguments from history
-         (task-name (mapconcat 'identity
+         (task-name (mapconcat #'identity
                                (cdr (split-string TASK " ")) " "))
          (command)
          ;; Set the exec path to include all binaries so the taskrunners can be found
@@ -852,7 +852,7 @@ If NO-OVERWRITE is non-nil then do not overwrite the cache file.  Otherwise,
 overwrite it with the new cache contents."
   (let ((proj-paths '()))
     (maphash (lambda (key _)
-               (when (not (file-exists-p (symbol-name key)))
+               (unless (file-exists-p (symbol-name key))
                  (push key proj-paths)))
              taskrunner-tasks-cache)
 

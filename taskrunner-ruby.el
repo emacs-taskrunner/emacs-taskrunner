@@ -9,6 +9,12 @@
 
 ;;;; Functions
 
+;; These are here just to silence the bytecompiler. They are defined in
+;; `taskrunner.el' and will be loaded later on but due to these files being
+;; required before the function being loaded, a warning is emitted.
+(declare-function taskrunner--narrow-to-line "ext:taskrunner")
+(declare-function taskrunner--make-task-buff-name "ext:taskrunner")
+
 (defun taskrunner--retrieve-rake-tasks-from-buffer ()
   "Retrieve the rake tasks from the current buffer.
 This function returns a list of the form:

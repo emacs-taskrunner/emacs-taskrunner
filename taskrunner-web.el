@@ -35,6 +35,12 @@ variable is nil then `npm' is used as default."
 
 ;;;; Functions
 
+;; These are here just to silence the bytecompiler. They are defined in
+;; `taskrunner.el' and will be loaded later on but due to these files being
+;; required before the function being loaded, a warning is emitted.
+(declare-function taskrunner--narrow-to-line "ext:taskrunner")
+(declare-function taskrunner--make-task-buff-name "ext:taskrunner")
+
 (defun taskrunner--yarn-or-npm (DIR)
   "Detect if the current project in directory DIR is using `yarn' or `npm'.
 If `taskrunner-preferred-js-package-manager' is not nil then its value is used.

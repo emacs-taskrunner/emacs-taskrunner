@@ -17,6 +17,12 @@
 
 ;;;; Functions
 
+;; These are here just to silence the bytecompiler. They are defined in
+;; `taskrunner.el' and will be loaded later on but due to these files being
+;; required before the function being loaded, a warning is emitted.
+(declare-function taskrunner--narrow-to-line "ext:taskrunner")
+(declare-function taskrunner--make-task-buff-name "ext:taskrunner")
+
 (defun taskrunner--get-leiningen-tasks-from-buffer ()
   "Retrieve all leiningen tasks from the current buffer."
   (let ((beg (search-forward-regexp "Several tasks are available:\n" nil t)))
