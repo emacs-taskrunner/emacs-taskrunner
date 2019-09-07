@@ -64,4 +64,4 @@ This function returns a list of the form:
     elixir-tasks))
 
 (provide 'taskrunner-mix)
-;;; taskrunner-mix ends here
+;;; taskrunner-mix.el ends here
