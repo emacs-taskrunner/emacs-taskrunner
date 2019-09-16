@@ -155,9 +155,9 @@ It is a hashmap where each member is of the form (project-root list-of-commands)
   (narrow-to-region (point-at-bol)
                     (point-at-eol)))
 
-(defmacro taskrunner--make-task-buff-name (TASKRUNNER)
+(defun taskrunner--make-task-buff-name (TASKRUNNER)
   "Create a buffer name used to retrieve the tasks for TASKRUNNER."
-  `(concat "*taskrunner-" ,TASKRUNNER "-tasks-buffer*"))
+  (concat "*taskrunner-" TASKRUNNER "-tasks-buffer*"))
 
 ;; Getters and setters for caches
 (defun taskrunner-get-last-command-ran (&optional DIR)
