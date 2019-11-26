@@ -17,7 +17,7 @@ Here are the caches and their respective uses:
   containing the last command as a value.
 - ~taskrunner-buld-cache~: Used to store the build directory for ~CMake/Meson/Make~
   project. This is usually the directory which contains either a ~Makefile~ or a
-  ~ninja.buld~ file. The key is the project root and the value is a string which
+  ~ninja.build~ file. The key is the project root and the value is a string which
   is the path to the build directory.
 - ~taskrunner-tasks-cache~: This is the main and most important cache. It stores
   all of the tasks for the current project in order for them to be retrieved

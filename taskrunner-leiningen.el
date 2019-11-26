@@ -48,7 +48,7 @@ This function returns a list of the form:
       (setq lein-tasks (taskrunner--get-leiningen-tasks-from-buffer))
       (kill-current-buffer))
     ;;; The last line of the output of Leiningen is always \n\n This results in
-    ;;; erronous output where the last task is of the form: "LEIN "
+    ;;; erroneous output where the last task is of the form: "LEIN "
     ;;; (i.e. its blank) so it must be removed.
     (butlast lein-tasks)))
 
