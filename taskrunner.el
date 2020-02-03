@@ -106,6 +106,12 @@
   :group 'taskrunner
   :type 'string)
 
+(defcustom taskrunner-cache-file
+  (expand-file-name "taskrunner-tasks.eld" user-emacs-directory)
+  "Location of the taskrunner cache file."
+  :group 'taskrunner
+  :type 'string)
+
 (defvar taskrunner--cache-file-read nil
   "Indicates whether or not the cache file has been read.
 Do not edit unless you want to reread the cache.")
